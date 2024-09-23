@@ -154,6 +154,15 @@ const DocsQASettings = () => {
                       </div>
                     )}
                   </div>
+                  <a href={`/?collection=${selectedCollection}`}>
+                    <Button
+                      white
+                      icon={'plus'}
+                      iconClasses="text-gray-400"
+                      text={'Add Application for this collection'}
+                      className="btn-sm text-sm bg-white mr-2" // Add margin-right
+                    />
+                  </a>
                   <Button
                     white
                     icon={'plus'}

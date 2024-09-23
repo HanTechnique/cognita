@@ -18,7 +18,7 @@ const FallBack = () => (
 
 const MainLayout = () => {
   const location = useLocation()
-  const shouldRenderNavBar = !location.pathname.includes('embed')
+  const shouldRenderNavBar = !location.pathname.includes('apps')
 
   return (
     <div className="flex flex-col h-full">
@@ -50,7 +50,7 @@ export const routes = (): BreadcrumbsRoute[] => [
         children: [{ index: true, element: <Applications /> }],
       },
       {
-        path: '/embed/:id',
+        path: '/apps/:id',
         children: [{ index: true, element: <DocsQAChatbot /> }],
       },
       {

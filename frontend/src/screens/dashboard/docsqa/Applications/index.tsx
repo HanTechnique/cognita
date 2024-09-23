@@ -67,7 +67,7 @@ const Applications = () => {
       flex: 1,
       renderCell: (params: GridRenderCellParams) => (
         <div className="flex gap-2 items-center w-full truncate">
-          <div className="truncate">{params?.value}</div>
+          <a href={params?.value} target="_blank"><div className="truncate">{params?.value}</div></a>
           <CopyField rawValue={params?.value} />
         </div>
       ),
@@ -107,13 +107,13 @@ const Applications = () => {
         ? applicationNames?.map((name) => ({
             id: name,
             name,
-            url: `${window.location.origin}/embed/${name}`,
+            url: `${window.location.origin}/apps/${name}`,
           }))
         : [],
     [applicationNames]
   )
 
-  const embedCode = `<embed src="${window.location.origin}/embed/${selectedApplication}" style="width: 400px; height: 500px">`
+  const embedCode = `<embed src="${window.location.origin}/apps/${selectedApplication}" style="width: 400px; height: 500px">`
 
   return (
     <div className="h-[calc(100%-50px)] overflow-auto bg-white">

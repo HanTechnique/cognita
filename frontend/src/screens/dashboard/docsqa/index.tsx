@@ -257,8 +257,13 @@ const DocsQA = () => {
   }
 
   useEffect(() => {
-    if (collections && collections.length) {
-      setSelectedCollection(collections[0])
+    const urlParams = new URLSearchParams(window.location.search);
+    const collectionFromUrl = urlParams.get('collection');
+
+    if (collectionFromUrl && collections?.includes(collectionFromUrl)) {
+      setSelectedCollection(collectionFromUrl);
+    } else if (collections && collections.length) {
+      setSelectedCollection(collections[0]);
     }
   }, [collections])
 

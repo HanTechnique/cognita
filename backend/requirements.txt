@@ -32,3 +32,4 @@ prisma==0.13.1
 
 ### video processing
 moviepy==1.0.3
+langsmith

@@ -17,6 +17,7 @@ from backend.modules.query_controllers.multimodal.payload import (
 from backend.modules.query_controllers.multimodal.types import MultiModalQueryInput
 from backend.modules.query_controllers.types import GENERATION_TIMEOUT_SEC, Answer, Docs
 from backend.server.decorators import post, query_controller
+from langsmith import traceable
 
 EXAMPLES = {
     "vector-store-similarity": QUERY_WITH_VECTOR_STORE_RETRIEVER_PAYLOAD,
@@ -55,7 +56,8 @@ class MultiModalRAGQueryController(BaseQueryController):
                 }
             )
         return [HumanMessage(content=content)]
-
+    
+    @traceable
     @post("/answer")
     async def answer(
         self,
