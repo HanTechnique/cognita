@@ -35,6 +35,7 @@ model_providers:
     audio_model_ids:
       - "Systran/faster-distil-whisper-large-v3"
     default_headers: {}
+
 ############################ OpenAI ###########################################
 #   Uncomment this provider if you want to use OpenAI as a models provider    #
 #   Remember to set `OPENAI_API_KEY` in container environment                 #
@@ -47,6 +48,7 @@ model_providers:
 #     - "gpt-3.5-turbo"
 #     - "gpt-4o"
 #   embedding_model_ids:
+#     - "text-embedding-3-large"
 #     - "text-embedding-3-small"
 #     - "text-embedding-ada-002"
 #   reranking_model_ids: []
@@ -64,8 +66,9 @@ model_providers:
 #   llm_model_ids:
 #     - "openai-main/gpt-4o-mini"
 #     - "openai-main/gpt-4-turbo"
-#     - "openai-main/gpt-3-5-turbo"
+#     - "openai-main/gpt-4o-mini"
 #   embedding_model_ids:
+#     - "openai-main/text-embedding-3-large"
 #     - "openai-main/text-embedding-3-small"
 #     - "openai-main/text-embedding-ada-002"
 #   reranking_model_ids: []

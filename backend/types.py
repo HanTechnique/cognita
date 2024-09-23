@@ -117,7 +117,6 @@ class ModelType(str, Enum):
     reranking = "reranking"
     audio = "audio"
 
-
 class ModelConfig(ConfiguredBaseModel):
     name: str
     # TODO (chiragjn): This should not be Optional! Changing might break backward compatibility
@@ -159,7 +158,7 @@ class ParserConfig(ConfiguredBaseModel):
     Parser configuration
     """
 
-    name: str  # File extension
+    name: str
     parameters: Dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="before")
@@ -454,7 +453,7 @@ class BaseCollection(ConfiguredBaseModel):
         title="Embedder configuration",
         default_factory=dict,
         example={
-            "name": "truefoundry/openai-main/text-embedding-3-small",
+            "name": "/openai/text-embedding-3-large",
             "type": "embedding",
         },
     )
@@ -515,7 +514,6 @@ class RagApplication(ConfiguredBaseModel):
     config: Dict[str, Any] = Field(
         title="Configuration for the rag app",
     )
-
     questions: List[str] = Field(
         title="Questions for the rag app",
         default_factory=list,

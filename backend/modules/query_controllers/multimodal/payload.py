@@ -3,7 +3,7 @@ QUERY_WITH_VECTOR_STORE_RETRIEVER_SIMILARITY = {
     "collection_name": "finance",
     "query": "Explain key operating metrics of FY20",
     "model_configuration": {
-        "name": "truefoundry/openai-main/gpt-4o-mini",
+        "name": "openai/gpt-4o-mini",
         "parameters": {"temperature": 0.1, "max_tokens": 1024},
     },
     "prompt_template": PROMPT,
@@ -26,7 +26,7 @@ QUERY_WITH_VECTOR_STORE_RETRIEVER_MMR = {
     "collection_name": "finance",
     "query": "Explain key operating metrics of FY20",
     "model_configuration": {
-        "name": "truefoundry/openai-main/gpt-4o-mini",
+        "name": "openai/gpt-4o-mini",
         "parameters": {"temperature": 0.1, "max_tokens": 1024},
     },
     "prompt_template": PROMPT,
@@ -55,7 +55,7 @@ QUERY_WITH_VECTOR_STORE_RETRIEVER_SIMILARITY_SCORE = {
     "collection_name": "finance",
     "query": "Explain key operating metrics of FY20",
     "model_configuration": {
-        "name": "truefoundry/openai-main/gpt-4o-mini",
+        "name": "openai/gpt-4o-mini",
         "parameters": {"temperature": 0.1, "max_tokens": 1024},
     },
     "prompt_template": PROMPT,
@@ -81,13 +81,13 @@ QUERY_WITH_CONTEXTUAL_COMPRESSION_RETRIEVER = {
     "collection_name": "finance",
     "query": "Explain key operating metrics of FY20",
     "model_configuration": {
-        "name": "truefoundry/openai-main/gpt-4o-mini",
+        "name": "openai/gpt-4o-mini",
         "parameters": {"temperature": 0.1, "max_tokens": 1024},
     },
     "prompt_template": PROMPT,
     "retriever_name": "contextual-compression",
     "retriever_config": {
-        "compressor_model_name": "local-infinity/mixedbread-ai/mxbai-rerank-xsmall-v1",
+        "compressor_model_name": "cohere/rerank-multilingual-v3.0",
         "top_k": 5,
         "search_type": "similarity",
         "search_kwargs": {"k": 10},
@@ -110,13 +110,13 @@ QUERY_WITH_CONTEXTUAL_COMPRESSION_RETRIEVER_SEARCH_TYPE_MMR = {
     "collection_name": "finance",
     "query": "Explain key operating metrics of FY20",
     "model_configuration": {
-        "name": "truefoundry/openai-main/gpt-4o-mini",
+        "name": "openai/gpt-4o-mini",
         "parameters": {"temperature": 0.1, "max_tokens": 1024},
     },
     "prompt_template": PROMPT,
     "retriever_name": "contextual-compression",
     "retriever_config": {
-        "compressor_model_name": "local-infinity/mixedbread-ai/mxbai-rerank-xsmall-v1",
+        "compressor_model_name": "cohere/rerank-multilingual-v3.0",
         "top_k": 5,
         "search_type": "mmr",
         "search_kwargs": {
@@ -133,7 +133,7 @@ QUERY_WITH_CONTEXTUAL_COMPRESSION_RETRIEVER_SEARCH_TYPE_MMR_PAYLOAD = {
     "description": """
         Requires k and fetch_k in search kwargs for mmr.
         search_type can either be similarity or mmr or similarity_score_threshold.
-        Currently only support for mixedbread-ai/mxbai-rerank-xsmall-v1 reranker is added.""",
+        Currently only support for cohere/rerank-multilingual-v3.0 is added.""",
     "value": QUERY_WITH_CONTEXTUAL_COMPRESSION_RETRIEVER_SEARCH_TYPE_MMR,
 }
 
@@ -144,13 +144,13 @@ QUERY_WITH_CONTEXTUAL_COMPRESSION_RETRIEVER_SEARCH_TYPE_SIMILARITY_WITH_SCORE = 
     "collection_name": "finance",
     "query": "Explain key operating metrics of FY20",
     "model_configuration": {
-        "name": "truefoundry/openai-main/gpt-4o-mini",
+        "name": "openai/gpt-4o-mini",
         "parameters": {"temperature": 0.1, "max_tokens": 1024},
     },
     "prompt_template": PROMPT,
     "retriever_name": "contextual-compression",
     "retriever_config": {
-        "compressor_model_name": "local-infinity/mixedbread-ai/mxbai-rerank-xsmall-v1",
+        "compressor_model_name": "cohere/rerank-multilingual-v3.0",
         "top_k": 5,
         "search_type": "similarity_score_threshold",
         "search_kwargs": {"score_threshold": 0.7},
@@ -164,7 +164,7 @@ QUERY_WITH_CONTEXTUAL_COMPRESSION_RETRIEVER_SEARCH_TYPE_SIMILARITY_WITH_SCORE_PA
     "description": """
         Requires score_threshold float (0~1) in search kwargs for similarity search.
         search_type can either be similarity or mmr or similarity_score_threshold.
-        Currently only support for mixedbread-ai/mxbai-rerank-xsmall-v1 reranker is added""",
+        Currently only support for cohere/rerank-multilingual-v3.0 reranker is added""",
     "value": QUERY_WITH_CONTEXTUAL_COMPRESSION_RETRIEVER_SEARCH_TYPE_SIMILARITY_WITH_SCORE,
 }
 
@@ -174,7 +174,7 @@ QUERY_WITH_MULTI_QUERY_RETRIEVER_SIMILARITY = {
     "collection_name": "finance",
     "query": "Explain key operating metrics of FY20",
     "model_configuration": {
-        "name": "truefoundry/openai-main/gpt-4o-mini",
+        "name": "openai/gpt-4o-mini",
         "parameters": {"temperature": 0.1, "max_tokens": 1024},
     },
     "prompt_template": PROMPT,
@@ -183,7 +183,7 @@ QUERY_WITH_MULTI_QUERY_RETRIEVER_SIMILARITY = {
         "search_type": "similarity",
         "search_kwargs": {"k": 5},
         "retriever_llm_configuration": {
-            "name": "truefoundry/openai-main/gpt-3-5-turbo",
+            "name": "openai/gpt-4o-mini",
             "parameters": {"temperature": 0.9},
         },
     },
@@ -205,7 +205,7 @@ QUERY_WITH_MULTI_QUERY_RETRIEVER_MMR = {
     "collection_name": "finance",
     "query": "Explain key operating metrics of FY20",
     "model_configuration": {
-        "name": "truefoundry/openai-main/gpt-4o-mini",
+        "name": "openai/gpt-4o-mini",
         "parameters": {"temperature": 0.1, "max_tokens": 1024},
     },
     "prompt_template": PROMPT,
@@ -217,7 +217,7 @@ QUERY_WITH_MULTI_QUERY_RETRIEVER_MMR = {
             "fetch_k": 10,
         },
         "retriever_llm_configuration": {
-            "name": "truefoundry/openai-main/gpt-3-5-turbo",
+            "name": "openai/gpt-4o-mini",
             "parameters": {"temperature": 0.9},
         },
     },
@@ -238,7 +238,7 @@ QUERY_WITH_MULTI_QUERY_RETRIEVER_SIMILARITY_SCORE = {
     "collection_name": "finance",
     "query": "Explain key operating metrics of FY20",
     "model_configuration": {
-        "name": "truefoundry/openai-main/gpt-3-5-turbo",
+        "name": "openai/gpt-4o-mini",
         "parameters": {"temperature": 0.1, "max_tokens": 1024},
     },
     "prompt_template": PROMPT,
@@ -247,7 +247,7 @@ QUERY_WITH_MULTI_QUERY_RETRIEVER_SIMILARITY_SCORE = {
         "search_type": "similarity_score_threshold",
         "search_kwargs": {"score_threshold": 0.7},
         "retriever_llm_configuration": {
-            "name": "truefoundry/openai-main/gpt-4o-mini",
+            "name": "openai/gpt-4o-mini",
             "parameters": {"temperature": 0.9},
         },
     },
@@ -270,13 +270,13 @@ QUERY_WITH_CONTEXTUAL_COMPRESSION_MULTI_QUERY_RETRIEVER_MMR = {
     "collection_name": "finance",
     "query": "Explain key operating metrics of FY20",
     "model_configuration": {
-        "name": "truefoundry/openai-main/gpt-4o-mini",
+        "name": "openai/gpt-4o-mini",
         "parameters": {"temperature": 0.1, "max_tokens": 1024},
     },
     "prompt_template": PROMPT,
     "retriever_name": "contextual-compression-multi-query",
     "retriever_config": {
-        "compressor_model_name": "local-infinity/mixedbread-ai/mxbai-rerank-xsmall-v1",
+        "compressor_model_name": "cohere/rerank-multilingual-v3.0",
         "top_k": 5,
         "search_type": "mmr",
         "search_kwargs": {
@@ -284,7 +284,7 @@ QUERY_WITH_CONTEXTUAL_COMPRESSION_MULTI_QUERY_RETRIEVER_MMR = {
             "fetch_k": 30,
         },
         "retriever_llm_configuration": {
-            "name": "truefoundry/openai-main/gpt-3-5-turbo",
+            "name": "openai/gpt-4o-mini",
             "parameters": {"temperature": 0.9},
         },
     },
@@ -306,18 +306,18 @@ QUERY_WITH_CONTEXTUAL_COMPRESSION_MULTI_QUERY_RETRIEVER_SIMILARITY = {
     "collection_name": "finance",
     "query": "Explain key operating metrics of FY20",
     "model_configuration": {
-        "name": "truefoundry/openai-main/gpt-4o-mini",
+        "name": "openai/gpt-4o-mini",
         "parameters": {"temperature": 0.1, "max_tokens": 1024},
     },
     "prompt_template": PROMPT,
     "retriever_name": "contextual-compression-multi-query",
     "retriever_config": {
-        "compressor_model_name": "local-infinity/mixedbread-ai/mxbai-rerank-xsmall-v1",
+        "compressor_model_name": "cohere/rerank-multilingual-v3.0",
         "top_k": 5,
         "search_type": "similarity",
         "search_kwargs": {"k": 10},
         "retriever_llm_configuration": {
-            "name": "truefoundry/openai-main/gpt-3-5-turbo",
+            "name": "openai/gpt-4o-mini",
             "parameters": {"temperature": 0.1, "max_tokens": 1024},
         },
     },
@@ -339,18 +339,18 @@ QUERY_WITH_CONTEXTUAL_COMPRESSION_MULTI_QUERY_RETRIEVER_SIMILARITY_SCORE = {
     "collection_name": "finance",
     "query": "Explain key operating metrics of FY20",
     "model_configuration": {
-        "name": "truefoundry/openai-main/gpt-4o-mini",
+        "name": "openai/gpt-4o-mini",
         "parameters": {"temperature": 0.1, "max_tokens": 1024},
     },
     "prompt_template": PROMPT,
     "retriever_name": "contextual-compression-multi-query",
     "retriever_config": {
-        "compressor_model_name": "local-infinity/mixedbread-ai/mxbai-rerank-xsmall-v1",
+        "compressor_model_name": "cohere/rerank-multilingual-v3.0",
         "top_k": 5,
         "search_type": "similarity_score_threshold",
         "search_kwargs": {"score_threshold": 0.7},
         "retriever_llm_configuration": {
-            "name": "truefoundry/openai-main/gpt-3-5-turbo",
+            "name": "openai/gpt-4o-mini",
             "parameters": {"temperature": 0.1, "max_tokens": 1024},
         },
     },

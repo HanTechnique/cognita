@@ -6,6 +6,7 @@ from langchain.docstore.document import Document
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 
 from backend.logger import logger
+import cohere
 
 
 # Reranking Service using Infinity API
@@ -88,4 +89,42 @@ class InfinityRerankerSvc(BaseDocumentCompressor):
             # show relevance scores upto 2 decimal places
             documents[index].metadata["relevance_score"] = relevance_scores[idx]
             ranked_documents.append(documents[index])
+        return ranked_documents
+# Reranking Service using Cohere API
+class CohereRerankerSvc(BaseDocumentCompressor):
+    """
+    Reranker Service that uses Cohere API
+    GitHub: https://github.com/cohere-ai/cohere-python
+    """
+
+    model: str
+    top_k: int
+    api_key: Optional[str] = None
+
+    def compress_documents(
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
+    ) -> Sequence[Document]:
+        """Compress retrieved documents given the query context."""
+        docs = [doc.page_content for doc in documents]
+
+        co = cohere.Client(self.api_key)
+        response = co.rerank(
+            query=query,
+            documents=docs,
+            model=self.model,
+            top_n=self.top_k,
+        )
+
+        logger.info(f"Reranked documents: {response}")
+
+        # sort documents based on the reranked results
+        ranked_documents = list()
+        for result in response.results:
+            # show relevance scores upto 2 decimal places
+            print(result)
+            documents[result.index].metadata["relevance_score"] = round(result.relevance_score, 2)
+            ranked_documents.append(documents[result.index])
         return ranked_documents

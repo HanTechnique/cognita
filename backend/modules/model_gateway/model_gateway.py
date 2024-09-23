@@ -13,6 +13,8 @@ from backend.modules.model_gateway.reranker_svc import InfinityRerankerSvc
 from backend.settings import settings
 from backend.types import ModelConfig, ModelProviderConfig, ModelType
 
+from .reranker_svc import CohereRerankerSvc
+
 
 class ModelGateway:
     provider_configs: List[ModelProviderConfig]
@@ -170,7 +172,7 @@ class ModelGateway:
             api_key = os.environ.get(model_provider_config.api_key_env_var, "")
         model_id = "/".join(model_name.split("/")[1:])
 
-        return InfinityRerankerSvc(
+        return CohereRerankerSvc(
             model=model_id,
             api_key=api_key,
             base_url=model_provider_config.base_url,
