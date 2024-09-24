@@ -19,6 +19,8 @@ import IconProvider from '@/components/assets/IconProvider'
 import { Link } from 'react-router-dom'
 import Button from '@/components/base/atoms/Button'
 import { baseQAFoundryPath } from '@/stores/qafoundry'
+import { useAuth0 } from "@auth0/auth0-react";
+import LogoutButton from "@/components/LogoutButton";
 
 function getMenuOptions(): {
   label: string
@@ -28,29 +30,30 @@ function getMenuOptions(): {
   return [
     {
       label: 'DocsQA',
-      route: '/',
+      route: '/dashboard',
       icon: faPlay,
     },
     {
       label: 'Collections',
-      route: '/collections',
+      route: '/dashboard/collections',
       icon: faGear,
     },
     {
       label: 'Data Sources',
-      route: '/data-sources',
+      route: '/dashboard/data-sources',
       icon: faDatabase,
     },
     {
       label: 'Applications',
-      route: '/applications',
+      route: '/dashboard/applications',
       icon: faRocket,
     },
   ]
 }
 
-export default function NavBar({ children }: any) {
+export default function DashboardNavBar({ children }: any) {
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false)
+  const { isAuthenticated } = useAuth0();
 
   const menu = getMenuOptions().map((menuOption, index) => (
     <div key={index} className="align-middle mt-1 flex items-center">
