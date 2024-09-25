@@ -4,7 +4,7 @@ import type { BreadcrumbsRoute } from 'use-react-router-breadcrumbs'
 
 import ScreenFallbackLoader from '@/components/base/molecules/ScreenFallbackLoader'
 import DataHub from '@/screens/dashboard/docsqa/DataSources'
-import DashboardNavBar from '@/screens/dashboard/docsqa/DashboardNavBar'
+import NavBar from '@/screens/home/NavBar'
 import Applications from '@/screens/dashboard/docsqa/Applications'
 const Home = lazy(() => import('@/screens/home'))
 const DocsQA = lazy(() => import('@/screens/dashboard/docsqa'))
@@ -16,22 +16,6 @@ const FallBack = () => (
     <ScreenFallbackLoader />
   </div>
 )
-
-const DashboardLayout = () => {
-  const location = useLocation()
-  const shouldRenderNavBar = !location.pathname.includes('apps')
-
-  return (
-    <div className="flex flex-col h-full">
-      {shouldRenderNavBar && <DashboardNavBar />}
-      <Suspense fallback={<FallBack />}>
-        <div className="p-4 bg-[#fafcff] h-full">
-          <Outlet />
-        </div>
-      </Suspense>
-    </div>
-  )
-}
 
 const MainLayout = () => {
   const location = useLocation()
@@ -51,8 +35,8 @@ const MainLayout = () => {
 
 export const routes = (): BreadcrumbsRoute[] => [
   {
-    path: '/dashboard',
-    element: <DashboardLayout />,
+    path: '/',
+    element: <MainLayout />,
     children: [
       {
         path: '/dashboard/collections',
@@ -70,22 +54,16 @@ export const routes = (): BreadcrumbsRoute[] => [
         path: '/dashboard/*',
         children: [{ index: true, element: <DocsQA /> }],
       },
-    ],
-  },
-  {
-    path: '/',
-    element: <MainLayout />,
-    children: [
-      {
-        path: '/*',
-        children: [{ index: true, element: <Home /> }],
-      },
       {
         path: '/apps/:id',
         children: [{ index: true, element: <DocsQAChatbot /> }],
       },
-    ]
-  }
+      {
+        path: '*',
+        children: [{ index: true, element: <Home /> }],
+      },
+    ],
+  },
 ]
 
 export default routes

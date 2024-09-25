@@ -27,4 +27,4 @@ const Home = () => {
   )
 }
 
-export default TenantNotFound
+export default Home

@@ -21,41 +21,56 @@ import Button from '@/components/base/atoms/Button'
 import { baseQAFoundryPath } from '@/stores/qafoundry'
 import { useAuth0 } from "@auth0/auth0-react";
 import LogoutButton from "@/components/LogoutButton";
+import LoginButton from "@/components/LoginButton";
 
 function getMenuOptions(): {
   label: string
   route: string
   icon: IconDefinition
+  visible: boolean
 }[] {
+  const { isAuthenticated } = useAuth0();
+
   return [
     {
       label: 'DocsQA',
       route: '/dashboard',
       icon: faPlay,
+      visible: isAuthenticated
     },
     {
       label: 'Collections',
       route: '/dashboard/collections',
       icon: faGear,
+      visible: isAuthenticated
     },
     {
       label: 'Data Sources',
       route: '/dashboard/data-sources',
       icon: faDatabase,
+      visible: isAuthenticated
     },
     {
       label: 'Applications',
       route: '/dashboard/applications',
       icon: faRocket,
+      visible: isAuthenticated
+    },
+
+    {
+      label: 'Home',
+      route: '/',
+      icon: faGear,
+      visible: true
     },
   ]
 }
 
-export default function DashboardNavBar({ children }: any) {
+export default function NavBar({ children }: any) {
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false)
-  const { isAuthenticated } = useAuth0();
-
-  const menu = getMenuOptions().map((menuOption, index) => (
+  const menu = getMenuOptions()
+  .filter(menuOption => menuOption.visible)
+  .map((menuOption, index) => (
     <div key={index} className="align-middle mt-1 flex items-center">
       <NavLink
         to={menuOption.route}
