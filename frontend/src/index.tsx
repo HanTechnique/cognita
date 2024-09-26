@@ -14,6 +14,7 @@ import reportWebVitals from './reportWebVitals'
 import { store } from './stores'
 
 import Spinner from './components/base/atoms/Spinner'
+import { Auth0Provider } from '@auth0/auth0-react';
 
 const Failure = lazy(() => import('@/screens/error/500'))
 
@@ -39,9 +40,15 @@ ReactDOM.render(
   <React.StrictMode>
     <ErrorBoundary fallback={renderFallback()}>
       <HelmetProvider context={helmetContext}>
-        <Provider store={store}>
-          <App />
-        </Provider>
+        <Auth0Provider
+          domain='hantech.auth0.com'
+          clientId='JDDLTMncmXxrfSlAaFAtSygbkEETFYga'
+          authorizationParams={{ redirect_uri: window.location.origin }}>
+
+          <Provider store={store}>
+            <App />
+          </Provider>
+        </Auth0Provider>
       </HelmetProvider>
     </ErrorBoundary>
   </React.StrictMode>,

@@ -56,17 +56,11 @@ function getMenuOptions(): {
       icon: faRocket,
       visible: isAuthenticated
     },
-
-    {
-      label: 'Home',
-      route: '/',
-      icon: faGear,
-      visible: true
-    },
   ]
 }
 
 export default function NavBar({ children }: any) {
+  const { isAuthenticated } = useAuth0();
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false)
   const menu = getMenuOptions()
   .filter(menuOption => menuOption.visible)
@@ -198,6 +192,12 @@ export default function NavBar({ children }: any) {
               size={1.25}
             />
           </div>
+          {isAuthenticated ? (
+            <LogoutButton />
+          ) : (
+            <LoginButton />
+          )}
+
           <Button
             className="btn-xs text-sm h-7 bg-black"
             text="Tweet"
