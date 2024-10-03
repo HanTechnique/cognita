@@ -399,7 +399,7 @@ components:
   # Whisper
   - name: cas-whisper
     env:
-      WHISPER_PORT: 8000
+      WHISPER_PORT: 8001
       WHISPER__MODEL: Systran/faster-distil-whisper-large-v3
       WHISPER__INFERENCE_DEVICE: auto
     type: service
@@ -407,7 +407,7 @@ components:
       type: image
       image_uri: fedirz/faster-whisper-server:latest-cpu
     ports:
-      - port: 8000
+      - port: 8001
         expose: false
         protocol: TCP
         app_protocol: http

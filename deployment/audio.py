@@ -32,7 +32,7 @@ class Audio:
                 ephemeral_storage_request=2500,
             ),
             env={
-                "WHISPER_PORT": 8000,
+                "WHISPER_PORT": 8001,
                 "WHISPER__MODEL": "Systran/faster-distil-whisper-large-v3",
                 "WHISPER__INFERENCE_DEVICE": "auto",
             },
