@@ -12,7 +12,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Drawer } from '@mui/material'
 import classNames from 'classnames'
-import React from 'react'
+import React, { useContext } from 'react'
 import { NavLink } from 'react-router-dom'
 
 import IconProvider from '@/components/assets/IconProvider'
@@ -22,6 +22,7 @@ import { baseQAFoundryPath } from '@/stores/qafoundry'
 import { useAuth0 } from "@auth0/auth0-react";
 import LogoutButton from "@/components/LogoutButton";
 import LoginButton from "@/components/LoginButton";
+import { AuthContext } from '@/components/AuthContext';
 
 function getMenuOptions(): {
   label: string
@@ -29,7 +30,7 @@ function getMenuOptions(): {
   icon: IconDefinition
   visible: boolean
 }[] {
-  const { isAuthenticated } = useAuth0();
+  const { isAuthenticated } = useContext(AuthContext);
 
   return [
     {

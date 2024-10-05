@@ -15,30 +15,19 @@ const Home = () => {
           <h2 className="font-inter font-black text-6xl">Home Page</h2>
           <div className="font-semibold">
             You are currently in the home page.
-            {isAuthenticated && (
+            {isAuthenticated ? (
               <>
-                <br />
-                If you want to go to the dashboard please click the below link.
-                <br />
-                <a
-                  className="link text-primary"
-                  href="/dashboard"
-                >
-                  Dashboard
-                </a>
                 <br />
                 If you want to go to logout please click the below link.
                 <br />
-                <LogoutButton></LogoutButton>
+                <LogoutButton />
               </>
-            )}
-
-            {!isAuthenticated && (
+            ) : (
               <>
                 <br />
                 If you want to go to login please click the below link.
                 <br />
-                <LoginButton></LoginButton>
+                <LoginButton />
               </>
             )}
             
