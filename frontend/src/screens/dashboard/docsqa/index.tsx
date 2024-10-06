@@ -104,7 +104,14 @@ const DocsQA = () => {
   const [searchAnswer] = useQueryCollectionMutation()
   const [createApplication, { isLoading: isCreateApplicationLoading }] =
     useCreateApplicationMutation()
-
+  
+    useEffect(() => {
+      // Disable Stream and Internet Search if GraphRAG is selected
+      if (selectedRetriever?.name === 'graphragstore') {
+        setIsStreamEnabled(false);
+        setIsInternetSearchEnabled(false);
+      }
+    }, [selectedRetriever]);
   const allQueryControllers = useMemo(() => {
     if (!openapiSpecs?.paths) return []
     return Object.keys(openapiSpecs?.paths)
@@ -535,6 +542,7 @@ const DocsQA = () => {
                 <Switch
                   checked={isStreamEnabled}
                   onChange={(e) => setIsStreamEnabled(e.target.checked)}
+                  disabled={selectedRetriever?.name === 'graphragstore'} // Disable if GraphRAG
                 />
               </div>
               <div className="flex justify-between items-center mt-1.5">
@@ -542,6 +550,7 @@ const DocsQA = () => {
                 <Switch
                   checked={isInternetSearchEnabled}
                   onChange={(e) => setIsInternetSearchEnabled(e.target.checked)}
+                  disabled={selectedRetriever?.name === 'graphragstore'} // Disable if GraphRAG
                 />
               </div>
               <div className="mb-1 mt-2 text-sm">Prompt Template:</div>

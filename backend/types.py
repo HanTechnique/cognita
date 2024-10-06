@@ -209,7 +209,7 @@ class RetrieverConfig(ConfiguredBaseModel):
     Retriever configuration
     """
 
-    search_type: Literal["mmr", "similarity"] = Field(
+    search_type: Literal["mmr", "similarity","similarity_score_threshold","none"] = Field(
         default="similarity",
         title="""Defines the type of search that the Retriever should perform. \
         Can be "similarity" (default), "mmr", or "similarity_score_threshold".""",

@@ -7,6 +7,21 @@ from backend.types import ConfiguredBaseModel, ModelConfig
 
 GENERATION_TIMEOUT_SEC = 60.0 * 10
 
+from typing import Any, Dict, List
+
+class Context:
+    """
+    Represents the context for a query.
+    """
+
+    def __init__(self, content: List[Dict[str, Any]]):
+        """
+        Initializes a Context object.
+
+        Args:
+            content (List[Dict[str, Any]]): The content of the context.
+        """
+        self.content = content
 
 class Document(ConfiguredBaseModel):
     page_content: str
@@ -34,8 +49,9 @@ class VectorStoreRetrieverConfig(ConfiguredBaseModel):
     search_type: str = Field(
         default="similarity",
         title="""Defines the type of search that the Retriever should perform.
-Can be 'similarity' (default), 'mmr', or 'similarity_score_threshold'.
+Can be 'similarity' (default), 'none', 'mmr', or 'similarity_score_threshold'.
     - "similarity": Retrieve the top k most similar documents to the query.,
+    - "none": Retrieve by passing the query.,
     - "mmr": Retrieve the top k most similar documents to the query and then rerank them using Maximal Marginal Relevance (MMR).,
     - "similarity_score_threshold": Retrieve all documents with similarity score greater than a threshold.
 """,
@@ -51,6 +67,7 @@ Can be 'similarity' (default), 'mmr', or 'similarity_score_threshold'.
     allowed_search_types: ClassVar[Sequence[str]] = (
         "similarity",
         "similarity_score_threshold",
+        "none",
         "mmr",
     )
 
@@ -172,6 +189,11 @@ class BaseQueryInput(ConfiguredBaseModel):
         retriever_name = values.get("retriever_name")
 
         if retriever_name == "vectorstore":
+            values["retriever_config"] = VectorStoreRetrieverConfig(
+                **values.get("retriever_config")
+            )
+
+        elif retriever_name == "graphragstore":
             values["retriever_config"] = VectorStoreRetrieverConfig(
                 **values.get("retriever_config")
             )

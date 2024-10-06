@@ -36,12 +36,11 @@ const DocsQAChatbot = () => {
       const params: CollectionQueryDto = {
         ...applicationsData.config,
         query: prompt,
-        stream: true,
+        stream: applicationsData.config.stream,
       }
       const sseRequest = new SSE(`${baseQAFoundryPath}/retrievers/${applicationsData.config.query_controller}/answer`, {
         payload: JSON.stringify({
-          ...params,
-          stream: true,
+          params,
         }),
         headers: {
           'Content-Type': 'application/json'

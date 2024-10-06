@@ -13,7 +13,7 @@ const PrivateRoute = ({ children }: { children: JSX.Element }) => {
 
   if (!isAuthenticated) {
     // Redirect to login page with current URL as redirect_url
-    return <Navigate to={'/login?url_redirect=/'} />;
+    return <Navigate to={`/login?url_redirect=${location.pathname}`} />;
   }
 
   return children;

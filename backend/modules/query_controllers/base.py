@@ -18,7 +18,7 @@ from backend.modules.query_controllers.types import *
 from backend.modules.vector_db.client import VECTOR_STORE_CLIENT
 from backend.settings import settings
 from backend.types import Collection, ModelConfig
-
+from nano_graphrag import GraphRAG
 
 class BaseQueryController:
     required_metadata = [
@@ -80,11 +80,14 @@ class BaseQueryController:
         """
         Get the vector store retriever
         """
-        return VectorStoreRetriever(
-            vectorstore=vector_store,
-            search_type=retriever_config.search_type,
-            search_kwargs=retriever_config.search_kwargs,
-        )
+        if isinstance(vector_store, GraphRAG):
+            return vector_store
+        else:
+            return VectorStoreRetriever(
+                vectorstore=vector_store,
+                search_type=retriever_config.search_type,
+                search_kwargs=retriever_config.search_kwargs,
+            )
 
     def _get_contextual_compression_retriever(self, vector_store, retriever_config):
         """
@@ -141,8 +144,15 @@ class BaseQueryController:
                 f"Using VectorStoreRetriever with {retriever_config.search_type} search"
             )
             retriever = self._get_vector_store_retriever(vector_store, retriever_config)
+        elif retriever_name == "graphragstore":
+            logger.debug(
+                f"Using VectorStoreRetriever with {retriever_config.search_type} search"
+            )
+            retriever = vector_store
 
         elif retriever_name == "contextual-compression":
+            if isinstance(vector_store, GraphRAG):
+                raise ValueError("ContextualCompressionRetriever is not supported with GraphRAG")
             logger.debug(
                 f"Using ContextualCompressionRetriever with {retriever_config.search_type} search"
             )
