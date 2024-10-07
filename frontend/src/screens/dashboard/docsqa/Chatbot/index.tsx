@@ -33,33 +33,50 @@ const DocsQAChatbot = () => {
     setAnswer('')
     setErrorMessage(false)
     try {
+      // Set stream based on retriever_name
+      const streamEnabled = applicationsData.config.retriever_name !== 'graphragstore';
+
       const params: CollectionQueryDto = {
         ...applicationsData.config,
         query: prompt,
-        stream: applicationsData.config.stream,
+        stream: streamEnabled,
       }
-      const sseRequest = new SSE(`${baseQAFoundryPath}/retrievers/${applicationsData.config.query_controller}/answer`, {
-        payload: JSON.stringify({
-          params,
-        }),
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      })
+      // Conditional logic for different retriever types
+      if (applicationsData.config.retriever_name === 'graphragstore') {
+        // Fetch request for other retriever types
+        const response = await fetch(`${baseQAFoundryPath}/retrievers/${applicationsData.config.query_controller}/answer`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(params)
+        });
 
-      sseRequest.addEventListener('data', (event: any) => {
-        try {
-          const parsed = JSON.parse(event.data)
-          if (parsed?.type === "answer") {
-            setAnswer((prevAnswer) => prevAnswer + parsed.content)
-            setIsRunningPrompt(false)
-          }
-        } catch (err) {}
-      })
+        const data = await response.json();
+        setAnswer(data.answer);
+        setIsRunningPrompt(false);
+      } else {
+        const sseRequest = new SSE(`${baseQAFoundryPath}/retrievers/${applicationsData.config.query_controller}/answer`, {
+          payload: JSON.stringify(params),
+          headers: {
+            'Content-Type': 'application/json'
+          },
+        })
 
-      sseRequest.addEventListener('end', (event: any) => {
-        sseRequest.close()
-      })
+        sseRequest.addEventListener('data', (event: any) => {
+          try {
+            const parsed = JSON.parse(event.data)
+            if (parsed?.type === "answer") {
+              setAnswer((prevAnswer) => prevAnswer + parsed.content)
+              setIsRunningPrompt(false)
+            }
+          } catch (err) {}
+        })
+
+        sseRequest.addEventListener('end', (event: any) => {
+          sseRequest.close()
+        })
+      }
     } catch (err: any) {
       setErrorMessage(true)
     }
