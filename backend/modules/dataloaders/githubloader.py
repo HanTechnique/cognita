@@ -6,7 +6,7 @@ from git import Repo
 
 from backend.logger import logger
 from backend.modules.dataloaders.loader import BaseDataLoader
-from backend.types import DataIngestionMode, DataPoint, DataSource, LoadedDataPoint
+from backend.types.core import DataIngestionMode, DataPoint, DataSource, LoadedDataPoint
 
 
 class GithubLoader(BaseDataLoader):

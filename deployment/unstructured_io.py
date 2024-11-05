@@ -29,7 +29,7 @@ class UnstructuredIO:
             env={
                 "UNSTRUCTURED_API_KEY": "tfy-secret://internal:cognita:UNSTRUCTURED_IO_API_KEY"
             },
-            ports=[Port(port=8000, protocol="TCP", expose=False, app_protocol="http")],
+            ports=[Port(port=9500, protocol="TCP", expose=False, app_protocol="http")],
             mounts=[],
             replicas=2.0,
             allow_interception=False,

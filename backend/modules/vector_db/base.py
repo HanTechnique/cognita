@@ -6,7 +6,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.schema.vectorstore import VectorStore
 
 from backend.constants import DEFAULT_BATCH_SIZE_FOR_VECTOR_STORE
-from backend.types import DataPointVector
+from backend.types.core import DataPointVector
 
 
 class BaseVectorDB(ABC):

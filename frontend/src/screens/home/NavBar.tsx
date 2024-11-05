@@ -46,6 +46,12 @@ function getMenuOptions(): {
       visible: isAuthenticated
     },
     {
+      label: 'Knowledges',
+      route: '/dashboard/knowledges',
+      icon: faGear,
+      visible: isAuthenticated
+    },
+    {
       label: 'Data Sources',
       route: '/dashboard/data-sources',
       icon: faDatabase,

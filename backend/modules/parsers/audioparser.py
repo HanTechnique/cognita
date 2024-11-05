@@ -9,7 +9,7 @@ from backend.logger import logger
 from backend.modules.model_gateway.model_gateway import model_gateway
 from backend.modules.parsers.parser import BaseParser
 from backend.modules.parsers.unstructured_io import UnstructuredIoParser
-from backend.types import ModelConfig
+from backend.types.core import ModelConfig
 
 
 class AudioParser(BaseParser):

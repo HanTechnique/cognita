@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from backend.logger import logger
 from backend.modules.dataloaders.loader import BaseDataLoader
 from backend.settings import settings
-from backend.types import DataIngestionMode, DataPoint, DataSource, LoadedDataPoint
+from backend.types.core import DataIngestionMode, DataPoint, DataSource, LoadedDataPoint
 
 
 class _FileStatistics(BaseModel):

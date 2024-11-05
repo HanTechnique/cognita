@@ -3,7 +3,8 @@ import asyncio
 from backend.indexer.argument_parser import parse_args_ingest_total_collection
 from backend.indexer.indexer import ingest_data
 from backend.logger import logger
-from backend.types import DataIngestionMode, IngestDataToCollectionDto
+from backend.types.core import DataIngestionMode
+from backend.types.collection import IngestDataToCollectionDto
 
 
 async def main():

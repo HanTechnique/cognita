@@ -11,7 +11,7 @@ from backend.modules.model_gateway.model_gateway import model_gateway
 from backend.modules.parsers.audioparser import AudioParser
 from backend.modules.parsers.multimodalparser import MultiModalParser
 from backend.modules.parsers.parser import BaseParser
-from backend.types import ModelConfig
+from backend.types.core import ModelConfig
 
 
 class VideoParser(BaseParser):

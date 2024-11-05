@@ -36,3 +36,4 @@ langsmith
 nano-graphrag
 pymilvus
 nest-asyncio
+uvloop

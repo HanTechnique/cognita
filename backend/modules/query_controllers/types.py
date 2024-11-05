@@ -3,7 +3,7 @@ from typing import Any, ClassVar, Dict, List, Optional, Sequence, Union
 from pydantic import Field, model_validator
 from qdrant_client.models import Filter as QdrantFilter
 
-from backend.types import ConfiguredBaseModel, ModelConfig
+from backend.types.core import ConfiguredBaseModel, ModelConfig
 
 GENERATION_TIMEOUT_SEC = 60.0 * 10
 
@@ -189,11 +189,6 @@ class BaseQueryInput(ConfiguredBaseModel):
         retriever_name = values.get("retriever_name")
 
         if retriever_name == "vectorstore":
-            values["retriever_config"] = VectorStoreRetrieverConfig(
-                **values.get("retriever_config")
-            )
-
-        elif retriever_name == "graphragstore":
             values["retriever_config"] = VectorStoreRetrieverConfig(
                 **values.get("retriever_config")
             )

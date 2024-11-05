@@ -1,14 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from backend.types import (
-    AssociateDataSourceWithCollection,
-    Collection,
-    CreateCollection,
-    CreateDataIngestionRun,
+from backend.types.core import (
     CreateDataSource,
-    DataIngestionRun,
-    DataIngestionRunStatus,
     DataSource,
     MetadataStoreConfig,
     RagApplication,
@@ -24,59 +18,6 @@ class BaseMetadataStore(ABC):
     async def aconnect(cls, **kwargs) -> "BaseMetadataStore":
         return cls(**kwargs)
 
-    #####
-    # COLLECTIONS
-    #####
-
-    @abstractmethod
-    async def aget_collection_by_name(
-        self, collection_name: str, no_cache: bool = True
-    ) -> Optional[Collection]:
-        """
-        Get a collection from the metadata store by name
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    async def acreate_collection(self, collection: CreateCollection) -> Collection:
-        """
-        Create a collection in the metadata store
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    async def aget_retrieve_collection_by_name(
-        self, collection_name: str, no_cache: bool = True
-    ) -> Optional[Collection]:
-        """
-        Get a collection from the metadata store by name used during retrieval phase
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    async def aget_collections(
-        self,
-    ) -> List[Collection]:
-        """
-        Get all collections from the metadata store
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    async def alist_collections(
-        self,
-    ) -> List[str]:
-        """
-        List all collection names from metadata store
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    async def adelete_collection(self, collection_name: str, include_runs=False):
-        """
-        Delete a collection from the metadata store
-        """
-        raise NotImplementedError()
 
     #####
     # DATA SOURCE
@@ -103,27 +44,6 @@ class BaseMetadataStore(ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
-    async def aassociate_data_source_with_collection(
-        self,
-        collection_name: str,
-        data_source_association: AssociateDataSourceWithCollection,
-    ) -> Collection:
-        """
-        Associate a data source with a collection in the metadata store
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    async def aunassociate_data_source_with_collection(
-        self,
-        collection_name: str,
-        data_source_fqn: str,
-    ) -> Collection:
-        """
-        Unassociate a data source with a collection in the metadata store
-        """
-        raise NotImplementedError()
 
     @abstractmethod
     async def alist_data_sources(
@@ -141,57 +61,7 @@ class BaseMetadataStore(ABC):
         """
         raise NotImplementedError()
 
-    #####
-    # DATA INGESTION RUNS
-    #####
-
-    @abstractmethod
-    async def acreate_data_ingestion_run(
-        self, data_ingestion_run: CreateDataIngestionRun
-    ) -> DataIngestionRun:
-        """
-        Create a data ingestion run in the metadata store
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    async def aget_data_ingestion_run(
-        self, data_ingestion_run_name: str, no_cache: bool = False
-    ) -> Optional[DataIngestionRun]:
-        """
-        Get a data ingestion run from the metadata store by name
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    async def aget_data_ingestion_runs(
-        self, collection_name: str, data_source_fqn: str = None
-    ) -> List[DataIngestionRun]:
-        """
-        Get all data ingestion runs from the metadata store
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    async def aupdate_data_ingestion_run_status(
-        self,
-        data_ingestion_run_name: str,
-        status: DataIngestionRunStatus,
-    ):
-        """
-        Update the status of a data ingestion run in the metadata store
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    async def alog_errors_for_data_ingestion_run(
-        self, data_ingestion_run_name: str, errors: Dict[str, Any]
-    ):
-        """
-        Log errors for a data ingestion run in the metadata store
-        """
-        raise NotImplementedError()
-
+    
     ####
     # RAG APPLICATIONS
     ####

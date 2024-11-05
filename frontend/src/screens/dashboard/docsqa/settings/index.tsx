@@ -5,15 +5,15 @@ import Spinner from '@/components/base/atoms/Spinner/Spinner'
 import {
   useGetCollectionDetailsQuery,
   useGetCollectionNamesQuery,
-} from '@/stores/qafoundry'
+} from '@/stores/qafoundry/collections'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import AddDataSourceToCollection from '../AddDataSourceToCollection'
-import CollectionCard from '../CollectionCard'
-import NewCollection from '../NewCollection'
-import NoCollections from '../NoCollections'
-import RunsHistoryDrawer from '../RunsHistoryDrawer'
-import DataSourcesTable from './DataSourcesTable'
+import AddDataSourceToCollection from '../Collections/AddDataSourceToCollection'
+import CollectionCard from '../Collections/CollectionCard'
+import NewCollection from '../Collections/NewCollection'
+import NoCollections from '../Collections/NoCollections'
+import RunsHistoryDrawer from '../Collections/RunsHistoryDrawer'
+import DataSourcesTable from '../Collections/DataSourcesTable'
 
 const DocsQASettings = () => {
   const [searchParams, setSearchParams] = useSearchParams()

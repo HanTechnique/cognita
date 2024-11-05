@@ -17,7 +17,7 @@ from backend.logger import logger
 from backend.modules.model_gateway.model_gateway import model_gateway
 from backend.modules.parsers.parser import BaseParser
 from backend.modules.parsers.utils import contains_text
-from backend.types import ModelConfig, ModelType
+from backend.types.core import ModelConfig, ModelType
 
 
 def stringToRGB(base64_string: str):

@@ -28,11 +28,15 @@ def run_deploy(workspace_fqn, application_set_name, ml_repo, base_domain_url):
         }
     )
 
+    GRAPHRAG_CONFIG = json.dumps(
+        {"provider":"nanographrag", "config": {"working_dir": "./storage"}}
+    )
+
     application_set = ApplicationSet(
         name=application_set_name,
         components=[
             Indexer(
-                ml_repo=ml_repo, workspace=workspace, VECTOR_DB_CONFIG=VECTOR_DB_CONFIG
+                ml_repo=ml_repo, workspace=workspace, VECTOR_DB_CONFIG=VECTOR_DB_CONFIG, GRAPHRAG_CONFIG=GRAPHRAG_CONFIG
             ).create_job(),
             Backend(
                 ml_repo=ml_repo,
@@ -41,6 +45,7 @@ def run_deploy(workspace_fqn, application_set_name, ml_repo, base_domain_url):
                 application_set_name=application_set_name,
                 base_domain_url=base_domain_url,
                 VECTOR_DB_CONFIG=VECTOR_DB_CONFIG,
+                GRAPHRAG_CONFIG=GRAPHRAG_CONFIG,
             ).create_service(),
             Frontend(
                 application_set_name=application_set_name,

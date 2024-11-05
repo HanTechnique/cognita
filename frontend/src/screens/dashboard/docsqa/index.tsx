@@ -4,18 +4,20 @@ import Input from '@/components/base/atoms/Input'
 import Markdown from '@/components/base/atoms/Markdown'
 import Spinner from '@/components/base/atoms/Spinner/Spinner'
 import {
-  CollectionQueryDto,
   SourceDocs,
   baseQAFoundryPath,
   useCreateApplicationMutation,
   useGetAllEnabledChatModelsQuery,
-  useGetCollectionNamesQuery,
   useGetOpenapiSpecsQuery,
-  useQueryCollectionMutation,
 } from '@/stores/qafoundry'
+import {
+  CollectionQueryDto,
+  useGetCollectionNamesQuery,
+  useQueryCollectionMutation,
+} from '@/stores/qafoundry/collections/index'
 import { MenuItem, Select, Switch, TextareaAutosize } from '@mui/material'
 import React, { useEffect, useMemo, useState } from 'react'
-import NoCollections from './NoCollections'
+import NoCollections from './Collections/NoCollections'
 import SimpleCodeEditor from '@/components/base/molecules/SimpleCodeEditor'
 import DocsQaInformation from './DocsQaInformation'
 import Modal from '@/components/base/atoms/Modal'
@@ -105,13 +107,7 @@ const DocsQA = () => {
   const [createApplication, { isLoading: isCreateApplicationLoading }] =
     useCreateApplicationMutation()
   
-    useEffect(() => {
-      // Disable Stream and Internet Search if GraphRAG is selected
-      if (selectedRetriever?.name === 'graphragstore') {
-        setIsStreamEnabled(false);
-        setIsInternetSearchEnabled(false);
-      }
-    }, [selectedRetriever]);
+    useEffect(() => {  }, [selectedRetriever]);
   const allQueryControllers = useMemo(() => {
     if (!openapiSpecs?.paths) return []
     return Object.keys(openapiSpecs?.paths)
@@ -542,7 +538,6 @@ const DocsQA = () => {
                 <Switch
                   checked={isStreamEnabled}
                   onChange={(e) => setIsStreamEnabled(e.target.checked)}
-                  disabled={selectedRetriever?.name === 'graphragstore'} // Disable if GraphRAG
                 />
               </div>
               <div className="flex justify-between items-center mt-1.5">
@@ -550,7 +545,6 @@ const DocsQA = () => {
                 <Switch
                   checked={isInternetSearchEnabled}
                   onChange={(e) => setIsInternetSearchEnabled(e.target.checked)}
-                  disabled={selectedRetriever?.name === 'graphragstore'} // Disable if GraphRAG
                 />
               </div>
               <div className="mb-1 mt-2 text-sm">Prompt Template:</div>

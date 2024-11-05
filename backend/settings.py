@@ -4,7 +4,7 @@ from typing import Any, Dict
 from pydantic import ConfigDict, model_validator
 from pydantic_settings import BaseSettings
 
-from backend.types import MetadataStoreConfig, VectorDBConfig
+from backend.types.core import MetadataStoreConfig, VectorDBConfig
 
 
 class Settings(BaseSettings):
@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     METADATA_STORE_CONFIG: MetadataStoreConfig
     ML_REPO_NAME: str = ""
     VECTOR_DB_CONFIG: VectorDBConfig
+    GRAPHRAG_CONFIG: VectorDBConfig
     LOCAL: bool = False
     TFY_HOST: str = ""
     TFY_API_KEY: str = ""

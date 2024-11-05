@@ -7,7 +7,7 @@ from langchain_core.documents import Document
 
 from backend.constants import DATA_POINT_FQN_METADATA_KEY
 from backend.modules.vector_db.base import BaseVectorDB
-from backend.types import DataPointVector, VectorDBConfig
+from backend.types.core import DataPointVector, VectorDBConfig
 
 
 def decapitalize(s):

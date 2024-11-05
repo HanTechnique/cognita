@@ -10,15 +10,17 @@ from langchain.retrievers import ContextualCompressionRetriever, MultiQueryRetri
 from langchain.schema.vectorstore import VectorStoreRetriever
 from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel
+from backend.modules.metadata_store.collections.prismastore import CollectionPrismaStore
 
 from backend.logger import logger
 from backend.modules.metadata_store.client import get_client
 from backend.modules.model_gateway.model_gateway import model_gateway
 from backend.modules.query_controllers.types import *
 from backend.modules.vector_db.client import VECTOR_STORE_CLIENT
+from backend.modules.graph.client import GRAPHRAG_STORE_CLIENT
 from backend.settings import settings
-from backend.types import Collection, ModelConfig
-from nano_graphrag import GraphRAG
+from backend.types.core import ModelConfig
+from backend.types.core import Collection
 
 class BaseQueryController:
     required_metadata = [
@@ -62,6 +64,7 @@ class BaseQueryController:
         Get the vector store for the collection
         """
         client = await get_client()
+        client = CollectionPrismaStore(client)
         collection = await client.aget_retrieve_collection_by_name(collection_name)
         if collection is None:
             raise HTTPException(status_code=404, detail="Collection not found")
@@ -75,19 +78,37 @@ class BaseQueryController:
                 model_name=collection.embedder_config.name
             ),
         )
+    async def _get_knowledge_graphs(self, collection_name: str):
+        """
+        Get the knowledges for the collection
+        """
+        client = await get_client()
+        client = CollectionPrismaStore(client)
+        collection = await client.aget_retrieve_collection_by_name(collection_name)
+        if collection is None:
+            raise HTTPException(status_code=404, detail="Collection not found")
+
+        if not isinstance(collection, Collection):
+            collection = Collection(**collection.model_dump())
+
+        knowledge_graphs = {}
+        for koc in collection.knowledges:
+            knowledge_graph = GRAPHRAG_STORE_CLIENT.get_graph_store(
+                    knowledge_name=koc.knowledge.name,
+                )
+
+            knowledge_graphs[koc.knowledge.name]=knowledge_graph
+        return knowledge_graphs
 
     def _get_vector_store_retriever(self, vector_store, retriever_config):
         """
         Get the vector store retriever
         """
-        if isinstance(vector_store, GraphRAG):
-            return vector_store
-        else:
-            return VectorStoreRetriever(
-                vectorstore=vector_store,
-                search_type=retriever_config.search_type,
-                search_kwargs=retriever_config.search_kwargs,
-            )
+        return VectorStoreRetriever(
+            vectorstore=vector_store,
+            search_type=retriever_config.search_type,
+            search_kwargs=retriever_config.search_kwargs,
+        )
 
     def _get_contextual_compression_retriever(self, vector_store, retriever_config):
         """
@@ -144,15 +165,7 @@ class BaseQueryController:
                 f"Using VectorStoreRetriever with {retriever_config.search_type} search"
             )
             retriever = self._get_vector_store_retriever(vector_store, retriever_config)
-        elif retriever_name == "graphragstore":
-            logger.debug(
-                f"Using VectorStoreRetriever with {retriever_config.search_type} search"
-            )
-            retriever = vector_store
-
         elif retriever_name == "contextual-compression":
-            if isinstance(vector_store, GraphRAG):
-                raise ValueError("ContextualCompressionRetriever is not supported with GraphRAG")
             logger.debug(
                 f"Using ContextualCompressionRetriever with {retriever_config.search_type} search"
             )
@@ -213,6 +226,25 @@ class BaseQueryController:
             return answer
         return ""
 
+    def _knowledges_search(self, knowledge_graphs, query):
+        import asyncio
+        import nest_asyncio
+        import uvloop
+
+        asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+        nest_asyncio.apply()
+
+        logger.info("Using knowledge search...")
+        documents=[]
+        for knowledge_name,knowledge_graph in knowledge_graphs.items():
+            knowledge_response = knowledge_graph.query(query)
+            document = Document(
+                page_content=knowledge_response,
+                metadata={"_data_point_fqn": "knowledge::"+knowledge_name},
+            )
+            documents.append(document)
+        return documents
+
     def _internet_search(self, context):
         if settings.BRAVE_API_KEY:
             logger.info("Using Internet search...")
@@ -233,7 +265,7 @@ class BaseQueryController:
         async for data in gen:
             yield "event: data\n"
             yield f"data: {json.dumps(data.dict())}\n\n"
-        yield "event: end\n"
+        yield "event:documents end\n"
 
     async def _stream_answer(self, rag_chain, query) -> AsyncIterator[BaseModel]:
         async with async_timeout.timeout(GENERATION_TIMEOUT_SEC):

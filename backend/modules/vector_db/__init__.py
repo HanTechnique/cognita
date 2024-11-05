@@ -1,14 +1,12 @@
 from backend.modules.vector_db.base import BaseVectorDB
 from backend.modules.vector_db.qdrant import QdrantVectorDB
-from backend.modules.vector_db.nanographrag import NanoGraphRAG
 
 # from backend.modules.vector_db.singlestore import SingleStoreVectorDB
 # from backend.modules.vector_db.weaviate import WeaviateVectorDB
-from backend.types import VectorDBConfig
+from backend.types.core import VectorDBConfig
 
 SUPPORTED_VECTOR_DBS = {
     "qdrant": QdrantVectorDB,
-    "nanographrag": NanoGraphRAG,
     # "weaviate": WeaviateVectorDB,
     # "singlestore": SingleStoreVectorDB,
 }

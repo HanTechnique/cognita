@@ -8,6 +8,8 @@ components:
       DATABASE_URL: postgresql://admin:password@cas-db-postgresql.cognita-internal.svc.cluster.local:5432/cognita-config
       VECTOR_DB_CONFIG: >-
         {"provider":"qdrant","url":"http://cas-qdrant.cognita-internal.svc.cluster.local:6333","api_key":""}
+      GRAPHRAG_CONFIG: >-
+        {"provider":"nanographrag", "config": {"working_dir": "./storage"}}
       MODELS_CONFIG_PATH: ./models_config.truefoundry.yaml
       METADATA_STORE_CONFIG: '{"provider":"prisma"}'
       ML_REPO_NAME: cognita-internal
@@ -66,6 +68,8 @@ components:
       LOG_LEVEL: DEBUG
       VECTOR_DB_CONFIG: >-
         {"provider":"qdrant","url":"http://cas-qdrant.cognita-internal.svc.cluster.local:6333","api_key":""}
+      GRAPHRAG_CONFIG: >-
+        {"provider":"nanographrag", "config": {"working_dir": "./storage"}}
       JOB_COMPONENT_NAME: cognita-internal-indexer
       JOB_FQN: tfy-prod-euwe1:cognita-internal:cas-indexer
       MODELS_CONFIG_PATH: ./models_config.truefoundry.yaml
@@ -81,7 +85,7 @@ components:
       type: build
       build_spec:
         type: dockerfile
-        command: /bin/bash -c "set -e; prisma db push --schema ./backend/database/schema.prisma && uvicorn --host 0.0.0.0 --port 8000 backend.server.app:app"
+        command: /bin/bash -c "set -e; prisma db push --schema ./backend/database/schema.prisma && uvicorn --host 0.0.0.0 --port 8000 backend.server.app:app --loop asyncio"
         dockerfile_path: ./backend/Dockerfile
         build_context_path: ./
       build_source:
@@ -177,6 +181,7 @@ components:
         type: dockerfile
         build_args:
           VITE_DOCS_QA_DELETE_COLLECTIONS: "true"
+          VITE_DOCS_QA_DELETE_KNOWLEDGES: "true"
           VITE_QA_FOUNDRY_URL: https://cas.truefoundry.com/api
           VITE_DOCS_QA_STANDALONE_PATH: /
           VITE_DOCS_QA_ENABLE_STANDALONE: "true"
@@ -426,7 +431,7 @@ components:
     liveness_probe:
       config:
         path: /health
-        port: 8000
+        port: 8001
         type: http
       period_seconds: 60
       timeout_seconds: 2
@@ -436,7 +441,7 @@ components:
     readiness_probe:
       config:
         path: /health
-        port: 8000
+        port: 8001
         type: http
       period_seconds: 30
       timeout_seconds: 2

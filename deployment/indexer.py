@@ -19,10 +19,11 @@ from deployment.config import (
 
 
 class Indexer:
-    def __init__(self, ml_repo, workspace, VECTOR_DB_CONFIG):
+    def __init__(self, ml_repo, workspace, VECTOR_DB_CONFIG, GRAPHRAG_CONFIG):
         self.ml_repo = ml_repo
         self.workspace = workspace
         self.VECTOR_DB_CONFIG = VECTOR_DB_CONFIG
+        self.GRAPHRAG_CONFIG = GRAPHRAG_CONFIG
 
     def create_job(self):
         return Job(
@@ -57,6 +58,7 @@ class Indexer:
                 "ML_REPO_NAME": self.ml_repo,
                 "INFINITY_API_KEY": "tfy-secret://internal:cognita:INFINITY_API_KEY",
                 "VECTOR_DB_CONFIG": self.VECTOR_DB_CONFIG,
+                "GRAPHRAG_CONFIG": self.GRAPHRAG_CONFIG,
                 "CARBON_AI_API_KEY": "tfy-secret://internal:cognita:CARBON_AI_API_KEY",
                 "MODELS_CONFIG_PATH": "./models_config.truefoundry.yaml",
                 "UNSTRUCTURED_IO_URL": f"http://{UNSTRUCTURED_IO_SERVICE_NAME}.{self.workspace}.svc.cluster.local:8000",

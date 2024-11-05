@@ -32,6 +32,7 @@ class Frontend:
                         "VITE_DOCS_QA_STANDALONE_PATH": "/",
                         "VITE_DOCS_QA_ENABLE_STANDALONE": "true",
                         "VITE_DOCS_QA_DELETE_COLLECTIONS": "true",
+                        "VITE_DOCS_QA_DELETE_KNOWLEDGES": "true",
                     },
                 ),
             ),

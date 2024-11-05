@@ -5,7 +5,7 @@ from truefoundry import ml
 
 from backend.logger import logger
 from backend.modules.dataloaders.loader import BaseDataLoader
-from backend.types import DataIngestionMode, DataPoint, DataSource, LoadedDataPoint
+from backend.types.core import DataIngestionMode, DataPoint, DataSource, LoadedDataPoint
 from backend.utils import unzip_file
 
 

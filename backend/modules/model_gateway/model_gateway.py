@@ -11,7 +11,7 @@ from backend.logger import logger
 from backend.modules.model_gateway.audio_processing_svc import AudioProcessingSvc
 from backend.modules.model_gateway.reranker_svc import InfinityRerankerSvc
 from backend.settings import settings
-from backend.types import ModelConfig, ModelProviderConfig, ModelType
+from backend.types.core import ModelConfig, ModelProviderConfig, ModelType
 
 from .reranker_svc import CohereRerankerSvc
 

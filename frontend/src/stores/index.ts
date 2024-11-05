@@ -3,9 +3,13 @@ import { configureStore, combineReducers } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
 
 import { qafoundryApi } from './qafoundry'
+import { qafoundryCollectionsApi } from './qafoundry/collections/index'
+import { qafoundryKnowledgesApi } from './qafoundry/knowledges/index'
 
 const reducer = combineReducers({
   [qafoundryApi.reducerPath]: qafoundryApi.reducer,
+  [qafoundryCollectionsApi.reducerPath]: qafoundryCollectionsApi.reducer,
+  [qafoundryKnowledgesApi.reducerPath]: qafoundryKnowledgesApi.reducer,
 })
 
 const rootReducer: typeof reducer = (state, action) => {

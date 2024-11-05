@@ -1,7 +1,8 @@
 import argparse
 
-from backend.types import DataIngestionMode, IngestDataToCollectionDto
+from backend.types.core import DataIngestionMode
 
+from backend.types.collection import IngestDataToCollectionDto
 
 def parse_args_ingest_total_collection() -> IngestDataToCollectionDto:
     parser = argparse.ArgumentParser(

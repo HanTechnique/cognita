@@ -29,6 +29,7 @@ class Backend:
         application_set_name,
         base_domain_url,
         VECTOR_DB_CONFIG,
+        GRAPHRAG_CONFIG,
     ):
         self.ml_repo = ml_repo
         self.workspace_fqn = workspace_fqn
@@ -36,6 +37,7 @@ class Backend:
         self.application_set_name = application_set_name
         self.base_domain_url = base_domain_url
         self.VECTOR_DB_CONFIG = VECTOR_DB_CONFIG
+        self.GRAPHRAG_CONFIG = GRAPHRAG_CONFIG
 
     def create_service(self):
         return Service(
@@ -48,7 +50,7 @@ class Backend:
                 build_spec=DockerFileBuild(
                     dockerfile_path="./backend/Dockerfile",
                     build_context_path="./",
-                    command='/bin/bash -c "set -e; prisma db push --schema ./backend/database/schema.prisma && uvicorn --host 0.0.0.0 --port 8000 backend.server.app:app"',
+                    command='/bin/bash -c "set -e; prisma db push --schema ./backend/database/schema.prisma && uvicorn --host 0.0.0.0 --port 8000 backend.server.app:app --loop asyncio"',
                 ),
             ),
             resources=Resources(
@@ -69,6 +71,7 @@ class Backend:
                 "BRAVE_API_KEY": "tfy-secret://internal:cognita:BRAVE_API_KEY",
                 "INFINITY_API_KEY": "tfy-secret://internal:cognita:INFINITY_API_KEY",
                 "VECTOR_DB_CONFIG": self.VECTOR_DB_CONFIG,
+                "GRAPHRAG_CONFIG": self.GRAPHRAG_CONFIG,
                 "CARBON_AI_API_KEY": "tfy-secret://internal:cognita:CARBON_AI_API_KEY",
                 "JOB_COMPONENT_NAME": f"{self.workspace}-{INDEXER_SERVICE_NAME}",
                 "MODELS_CONFIG_PATH": "./models_config.truefoundry.yaml",

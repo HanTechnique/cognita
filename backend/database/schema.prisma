@@ -25,11 +25,32 @@ model Collection {
     embedder_config         Json
     // Collection can have multiple data sources
     associated_data_sources Json    @default("{}")
+    knowledges              KnowledgeOnCollection[]  @relation("CollectionKnowledge")
 
     @@map("collections")
 }
+model Knowledge {
+    id                      Int     @id @default(autoincrement())
+    name                    String  @unique
+    description             String?
+    // Knowledge can have multiple data sources
+    associated_data_sources Json    @default("{}")
+    collections              KnowledgeOnCollection[]  @relation("CollectionKnowledge")
 
-model IngestionRuns {
+    @@map("knowledges")
+}
+
+model KnowledgeOnCollection {
+    collectionId Int
+    knowledgeId  Int
+    @@id([collectionId, knowledgeId])
+    @@map("knowledge_on_collection") 
+
+    collection Collection @relation("CollectionKnowledge",fields: [collectionId], references: [id])
+    knowledge  Knowledge  @relation("CollectionKnowledge",fields: [knowledgeId], references: [id])
+}
+
+model CollectionIngestionRuns {
     id                     Int     @id @default(autoincrement())
     name                   String  @unique
     collection_name        String
@@ -40,9 +61,22 @@ model IngestionRuns {
     raise_error_on_failure Boolean
     errors                 Json?
 
-    @@map("ingestion_runs")
+    @@map("collection_ingestion_runs")
 }
 
+model KnowledgeIngestionRuns {
+    id                     Int     @id @default(autoincrement())
+    name                   String  @unique
+    knowledge_name        String
+    data_source_fqn        String
+    parser_config          Json
+    data_ingestion_mode    String
+    status                 String
+    raise_error_on_failure Boolean
+    errors                 Json?
+
+    @@map("knowledge_ingestion_runs")
+}
 model RagApps {
     id        Int      @id @default(autoincrement())
     name      String   @unique

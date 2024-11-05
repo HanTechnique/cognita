@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from langchain.docstore.document import Document
 
 from backend.logger import logger
-from backend.types import LoadedDataPoint
+from backend.types.core import LoadedDataPoint
 
 PARSER_REGISTRY = {}
 PARSER_REGISTRY_EXTENSIONS = defaultdict(list)

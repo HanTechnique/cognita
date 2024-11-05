@@ -24,30 +24,19 @@ export interface ModelConfig {
   }
 }
 
-export interface CollectionQueryDto {
-  collection_name: string
-  retriever_name?: string
-  retriever_config: {
-    search_type: string
-    search_kwargs?: any
-    k?: number
-    fetch_k?: number
-  }
-  prompt_template?: string
-  query: string
-  model_configuration: ModelConfig
-  stream?: boolean
-  queryController?: string
-}
 
-interface DataSource {
+export interface DataSource {
   type: string
   uri?: string
   metadata?: object
   fqn: string
 }
 
-interface ParserConfig {
+export interface Knowledge {
+  name: string
+}
+
+export interface ParserConfig {
   name: string
   parameters?: {
     [key: string]: any
@@ -62,29 +51,27 @@ export interface AssociatedDataSource {
   data_source: DataSource
 }
 
-interface EmbedderConfig {
+export interface AssociatedKnowledge {
+  knowledge: Knowledge
+}
+
+
+export interface EmbedderConfig {
   name: string
   parameters?: {
     [key: string]: any
   }
 }
 
-export interface Collection {
-  name: string
-  description?: string
-  embedder_config: EmbedderConfig
-  associated_data_sources: {
-    [key: string]: AssociatedDataSource
-  }
-}
 
-interface AddDataSourcePayload {
+
+export interface AddDataSourcePayload {
   type: string
   uri: string
   metadata?: object
 }
 
-interface DataIngestionRun {
+export interface DataIngestionRun {
   collection_name: string
   data_source_fqn: string
   parser_config?: {
@@ -98,6 +85,22 @@ interface DataIngestionRun {
   raise_error_on_failure: boolean
   name: string
   status: string
+}
+
+export interface CollectionQueryDto {
+  collection_name: string
+  retriever_name?: string
+  retriever_config: {
+    search_type: string
+    search_kwargs?: any
+    k?: number
+    fetch_k?: number
+  }
+  prompt_template?: string
+  query: string
+  model_configuration: ModelConfig
+  stream?: boolean
+  queryController?: string
 }
 
 export interface SourceDocs {
@@ -115,11 +118,6 @@ export interface SourceDocs {
   type: string
 }
 
-interface QueryAnswer {
-  answer: string
-  docs: SourceDocs[]
-}
-
 export const baseQAFoundryPath = import.meta.env.VITE_QA_FOUNDRY_URL
 
 export const qafoundryApi = createApi({
@@ -128,52 +126,11 @@ export const qafoundryApi = createApi({
     baseUrl: baseQAFoundryPath,
   }),
   tagTypes: [
-    'Collections',
-    'CollectionNames',
-    'CollectionDetails',
     'DataSources',
     'Applications',
   ],
   endpoints: (builder) => ({
     // * Queries
-    getCollections: builder.query<Collection[], void>({
-      query: () => ({
-        url: '/v1/collections',
-        responseHandler: (response) =>
-          response
-            .json()
-            .then((data: { collections: Collection[] }) => data.collections),
-      }),
-      providesTags: ['Collections'],
-    }),
-    getCollectionNames: builder.query<string[], void>({
-      query: () => ({
-        url: '/v1/collections/list',
-        method: 'GET',
-        responseHandler: (response) =>
-          response
-            .json()
-            .then((data: { collections: string[] }) => data.collections),
-      }),
-      providesTags: ['CollectionNames'],
-    }),
-    getCollectionDetails: builder.query<Collection, string>({
-      query: (collectionName) => ({
-        url: `/v1/collections/${collectionName}`,
-        method: 'GET',
-        responseHandler: (response) =>
-          response
-            .json()
-            .then((data: { collection: Collection }) => data.collection),
-      }),
-      providesTags: ['CollectionDetails'],
-    }),
-    getCollectionStatus: builder.query({
-      query: (payload: { collectionName: string }) => ({
-        url: `/v1/collections/data_ingestion_run/${payload.collectionName}/status`,
-        method: 'GET',
-      }),
-    }),
     getDataLoaders: builder.query<any, void>({
       query: () => ({
         url: '/v1/components/dataloaders',
@@ -206,23 +163,6 @@ export const qafoundryApi = createApi({
             .then((data: { data_sources: DataSource[] }) => data.data_sources),
       }),
       providesTags: ['DataSources'],
-    }),
-    getDataIngestionRuns: builder.query<DataIngestionRun[], any>({
-      query: (payload: {
-        collection_name: string
-        data_source_fqn: string
-      }) => ({
-        url: '/v1/collections/data_ingestion_runs/list',
-        body: payload,
-        method: 'POST',
-        responseHandler: (response) =>
-          response
-            .json()
-            .then(
-              (data: { data_ingestion_runs: DataIngestionRun[] }) =>
-                data.data_ingestion_runs
-            ),
-      }),
     }),
     getOpenapiSpecs: builder.query<any, void>({
       query: () => ({
@@ -271,38 +211,6 @@ export const qafoundryApi = createApi({
         }
       },
     }),
-    createCollection: builder.mutation({
-      query: (payload: object) => ({
-        url: '/v1/collections',
-        body: payload,
-        method: 'POST',
-      }),
-      invalidatesTags: ['Collections', 'CollectionNames'],
-    }),
-    addDocsToCollection: builder.mutation({
-      query: (payload: object) => ({
-        url: '/v1/collections/associate_data_source',
-        body: payload,
-        method: 'POST',
-      }),
-      invalidatesTags: ['Collections', 'CollectionDetails'],
-    }),
-    unassociateDataSource: builder.mutation({
-      query: (payload: object) => ({
-        url: '/v1/collections/unassociate_data_source',
-        body: payload,
-        method: 'POST',
-      }),
-      invalidatesTags: ['Collections', 'CollectionDetails'],
-    }),
-    deleteCollection: builder.mutation({
-      query: (payload: { collectionName: string }) => ({
-        url: `/v1/collections/${payload.collectionName}`,
-        body: payload,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['Collections', 'CollectionNames', 'CollectionDetails'],
-    }),
     deleteDataSource: builder.mutation({
       query: (payload: { data_source_fqn: string }) => ({
         url: `/v1/data_source/delete?data_source_fqn=${encodeURIComponent(
@@ -312,16 +220,6 @@ export const qafoundryApi = createApi({
       }),
       invalidatesTags: ['DataSources'],
     }),
-    queryCollection: builder.mutation<
-      QueryAnswer,
-      CollectionQueryDto & { queryController: string }
-    >({
-      query: (payload) => ({
-        url: `/retrievers/${payload.queryController}/answer`,
-        body: payload,
-        method: 'POST',
-      }),
-    }),
     addDataSource: builder.mutation({
       query: (payload: AddDataSourcePayload) => ({
         url: '/v1/data_source',
@@ -329,20 +227,6 @@ export const qafoundryApi = createApi({
         method: 'POST',
       }),
       invalidatesTags: (_result, _opts) => [{ type: 'DataSources' }],
-    }),
-    ingestDataSource: builder.mutation({
-      query: (payload: {
-        collection_name: string
-        data_source_fqn: string
-        data_ingestion_mode: string
-        raise_error_on_failure: boolean
-        run_as_job: boolean
-      }) => ({
-        url: '/v1/collections/ingest',
-        body: payload,
-        method: 'POST',
-      }),
-      invalidatesTags: ['CollectionDetails'],
     }),
     createApplication: builder.mutation({
       query: (payload: object) => ({
@@ -364,15 +248,10 @@ export const qafoundryApi = createApi({
 
 export const {
   // queries
-  useGetCollectionsQuery,
-  useGetCollectionNamesQuery,
-  useGetCollectionDetailsQuery,
-  useGetCollectionStatusQuery,
   useGetAllEnabledChatModelsQuery,
   useGetAllEnabledEmbeddingModelsQuery,
   useGetDataLoadersQuery,
   useGetDataSourcesQuery,
-  useGetDataIngestionRunsQuery,
   useGetOpenapiSpecsQuery,
   useGetApplicationsQuery,
   useGetApplicationDetailsByNameQuery,
@@ -380,14 +259,8 @@ export const {
   // mutations
   useUploadDataToDataDirectoryMutation,
   useUploadDataToLocalDirectoryMutation,
-  useCreateCollectionMutation,
-  useAddDocsToCollectionMutation,
-  useUnassociateDataSourceMutation,
-  useDeleteCollectionMutation,
   useDeleteDataSourceMutation,
-  useQueryCollectionMutation,
   useAddDataSourceMutation,
-  useIngestDataSourceMutation,
   useCreateApplicationMutation,
   useDeleteApplicationMutation,
 } = qafoundryApi

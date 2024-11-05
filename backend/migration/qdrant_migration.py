@@ -24,7 +24,7 @@ from qdrant_client import QdrantClient
 
 from backend.logger import logger
 from backend.migration.utils import get_collection, migrate
-from backend.types import AssociateDataSourceWithCollection, CreateCollectionDto
+from backend.types.collection import AssociateDataSourceWithCollection, CreateCollectionDto
 
 
 def migrate_collection(

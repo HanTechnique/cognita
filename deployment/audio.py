@@ -37,11 +37,11 @@ class Audio:
                 "WHISPER__INFERENCE_DEVICE": "auto",
             },
             ports=[
-                Port(port=8000, expose=False, protocol="TCP", app_protocol="http"),
+                Port(port=8001, expose=False, protocol="TCP", app_protocol="http"),
             ],
             mounts=[],
             liveness_probe=HealthProbe(
-                config=HttpProbe(path="/health", port=8000, scheme="HTTP"),
+                config=HttpProbe(path="/health", port=8001, scheme="HTTP"),
                 period_seconds=60,
                 timeout_seconds=2,
                 failure_threshold=5,
@@ -49,7 +49,7 @@ class Audio:
                 initial_delay_seconds=10,
             ),
             readiness_probe=HealthProbe(
-                config=HttpProbe(path="/health", port=8000, scheme="HTTP"),
+                config=HttpProbe(path="/health", port=8001, scheme="HTTP"),
                 period_seconds=30,
                 timeout_seconds=2,
                 failure_threshold=5,

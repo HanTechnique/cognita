@@ -9,7 +9,7 @@ from langchain_community.vectorstores.singlestoredb import SingleStoreDB
 from backend.constants import DATA_POINT_FQN_METADATA_KEY, DATA_POINT_HASH_METADATA_KEY
 from backend.logger import logger
 from backend.modules.vector_db.base import BaseVectorDB
-from backend.types import DataPointVector, VectorDBConfig
+from backend.types.core import DataPointVector, VectorDBConfig
 
 MAX_SCROLL_LIMIT = int(1e6)
 BATCH_SIZE = 1000

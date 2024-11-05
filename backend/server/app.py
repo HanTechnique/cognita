@@ -7,6 +7,8 @@ from fastapi.responses import JSONResponse
 
 from backend.modules.query_controllers.query_controller import QUERY_CONTROLLER_REGISTRY
 from backend.server.routers.collection import router as collection_router
+from backend.server.routers.knowledge import router as knowledge_router
+
 from backend.server.routers.components import router as components_router
 from backend.server.routers.data_source import router as datasource_router
 from backend.server.routers.internal import router as internal_router
@@ -55,6 +57,7 @@ app.include_router(components_router)
 app.include_router(datasource_router)
 app.include_router(rag_apps_router)
 app.include_router(collection_router)
+app.include_router(knowledge_router)
 app.include_router(internal_router)
 
 # Register Query Controllers dynamically as FastAPI routers

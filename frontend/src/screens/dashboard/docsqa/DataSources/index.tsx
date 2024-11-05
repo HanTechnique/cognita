@@ -6,7 +6,7 @@ import {
 } from '@/stores/qafoundry'
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid'
 import React, { useMemo } from 'react'
-import NewDataSource from '../NewDataSource'
+import NewDataSource from './NewDataSource'
 import CopyField from '@/components/base/atoms/CopyField'
 import { IS_LOCAL_DEVELOPMENT } from '@/stores/constants'
 import notify from '@/components/base/molecules/Notify'

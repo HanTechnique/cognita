@@ -10,7 +10,9 @@ const Home = lazy(() => import('@/screens/home'))
 const Login = lazy(() => import('@/screens/login'))
 const DocsQA = lazy(() => import('@/screens/dashboard/docsqa'))
 const DocsQAChatbot = lazy(() => import('@/screens/dashboard/docsqa/Chatbot'))
-const DocsQASettings = lazy(() => import('@/screens/dashboard/docsqa/settings'))
+const Collections = lazy(() => import('@/screens/dashboard/docsqa/Collections'))
+const Knowledges = lazy(() => import('@/screens/dashboard/docsqa/Knowledges'))
+
 import PrivateRoute from '@/components/PrivateRoute'; // Assuming PrivateRoute is in the same directory
 import { AuthProvider } from '@/components/AuthContext'
 
@@ -46,7 +48,15 @@ export const routes = (): BreadcrumbsRoute[] => [
         path: '/dashboard/collections',
         children: [{ index: true, element: (
           <PrivateRoute>
-            <DocsQASettings />
+            <Collections />
+          </PrivateRoute>
+        ) }],
+      },
+      {
+        path: '/dashboard/knowledges',
+        children: [{ index: true, element: (
+          <PrivateRoute>
+            <Knowledges />
           </PrivateRoute>
         ) }],
       },
