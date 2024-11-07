@@ -54,7 +54,6 @@ class CollectionPrismaStore(PrismaStore):
             )
 
             if collection:
-                print(str(collection))
                 return Collection.model_validate(collection.model_dump())
             return None
         except Exception as e:

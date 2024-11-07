@@ -124,7 +124,6 @@ class CohereRerankerSvc(BaseDocumentCompressor):
         ranked_documents = list()
         for result in response.results:
             # show relevance scores upto 2 decimal places
-            print(result)
             documents[result.index].metadata["relevance_score"] = round(result.relevance_score, 2)
             ranked_documents.append(documents[result.index])
         return ranked_documents

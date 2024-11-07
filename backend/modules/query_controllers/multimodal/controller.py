@@ -108,10 +108,9 @@ class MultiModalRAGQueryController(BaseQueryController):
                     logger.info(f"Prompt: {prompt}")
             else:
                 outputs = await setup_and_retrieval.ainvoke(request.query)
-
             if "context" in outputs:
+                outputs["context"].extend(knowledge_documents) 
                 docs = outputs["context"]
-                docs.extend(knowledge_documents) 
 
                 for doc in docs:
                     image_b64 = doc.metadata.get("image_b64", None)

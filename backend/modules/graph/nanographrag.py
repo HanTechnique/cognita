@@ -97,7 +97,6 @@ class NanoGraphRAG(GraphRAGDB):
 
         data_point_vectors = []
         for vector in all_docs:
-            print(vector)
             data_point_vectors.append(
                 DataPointVector(
                     data_point_vector_id=vector['id'],

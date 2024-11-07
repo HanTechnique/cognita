@@ -239,11 +239,9 @@ async def associate_knowledge_with_collection(
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found")
         
-        print(str(collection))
         knowledge = await client.aget_knowledge_by_name(knowledge_name) 
         if not knowledge:
             raise HTTPException(status_code=404, detail="Knowledge not found")
-        print(str(knowledge))
         knowledge.collections = knowledge.collections or [] 
 
         # Associate using Prisma
@@ -268,11 +266,9 @@ async def unassociate_knowledge_with_collection(
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found")
         
-        print(str(collection))
         knowledge = await client.aget_knowledge_by_name(knowledge_name) 
         if not knowledge:
             raise HTTPException(status_code=404, detail="Knowledge not found")
-        print(str(knowledge))
         knowledge.collections = knowledge.collections or [] 
 
         # Associate using Prisma

@@ -24,7 +24,6 @@ class MilvusLiteStorage(BaseVectorStorage):
         self._client_file_name = os.path.join(
             self.global_config["working_dir"]+"_milvus", "milvus_lite.db"
         )
-        print(self._client_file_name)
         self._client = MilvusClient(self._client_file_name)
         self._max_batch_size = self.global_config["embedding_batch_num"]
         MilvusLiteStorage.create_collection_if_not_exist(
