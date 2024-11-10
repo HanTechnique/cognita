@@ -1,7 +1,8 @@
 import multiprocessing as mp
 from contextlib import asynccontextmanager
-
-from fastapi import APIRouter, FastAPI
+from backend.server.auth import get_current_user
+from fastapi import FastAPI, Depends
+from fastapi import APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -15,7 +16,6 @@ from backend.server.routers.internal import router as internal_router
 from backend.server.routers.rag_apps import router as rag_apps_router
 from backend.settings import settings
 from backend.utils import AsyncProcessPoolExecutor
-
 
 @asynccontextmanager
 async def _process_pool_lifespan_manager(app: FastAPI):
@@ -49,8 +49,13 @@ app.add_middleware(
 
 
 @app.get("/health-check")
-def status():
+def health_check():
     return JSONResponse(content={"status": "OK"})
+
+
+@app.get('/api')
+async def protected_route(user: dict = Depends(get_current_user)):
+    return {"user": user}
 
 
 app.include_router(components_router)

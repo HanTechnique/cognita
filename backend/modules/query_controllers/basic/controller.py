@@ -2,7 +2,8 @@ from fastapi import Body, HTTPException
 from fastapi.responses import StreamingResponse
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
-
+from fastapi import Depends
+from backend.server.auth import get_current_user
 from backend.logger import logger
 from backend.modules.query_controllers.base import BaseQueryController
 from backend.modules.query_controllers.basic.payload import (
@@ -25,6 +26,7 @@ class BasicRAGQueryController(BaseQueryController):
     @post("/answer")
     async def answer(
         self,
+        user: dict = Depends(get_current_user),
         request: ExampleQueryInput = Body(
             openapi_examples=EXAMPLES,
         ),
@@ -34,7 +36,7 @@ class BasicRAGQueryController(BaseQueryController):
         """
         try:
             # Get the vector store
-            vector_store = await self._get_vector_store(request.collection_name)
+            vector_store = await self._get_vector_store(user, request.collection_name)
 
             # Create the QA prompt templates
             QA_PROMPT = self._get_prompt_template(

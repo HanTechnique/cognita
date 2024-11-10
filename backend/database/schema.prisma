@@ -22,6 +22,7 @@ model Collection {
     id                      Int     @id @default(autoincrement())
     name                    String  @unique
     description             String?
+    owner_id             String?
     embedder_config         Json
     // Collection can have multiple data sources
     associated_data_sources Json    @default("{}")

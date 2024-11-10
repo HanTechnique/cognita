@@ -9,11 +9,26 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({ isAuthenticated: false });
 
 const AuthProvider: React.FC = ({ children }) => {
-  const { isAuthenticated } = useAuth0();
+  const { isAuthenticated, getIdTokenClaims } = useAuth0();
   const [userIsAuthenticated, setUserIsAuthenticated] = useState(isAuthenticated);
 
   useEffect(() => {
-    setUserIsAuthenticated(isAuthenticated);
+    const checkAuthentication = async () => {
+      if (isAuthenticated) {
+        try {
+          // Get and store the idToken
+          const claims = await getIdTokenClaims();
+          const idToken = claims.__raw;
+          localStorage.setItem('idToken', idToken);
+        } catch (error) {
+          console.error('Error getting and storing idToken:', error);
+        }
+      }
+
+      setUserIsAuthenticated(isAuthenticated);
+    };
+
+    checkAuthentication();
   }, [isAuthenticated]);
 
   return (

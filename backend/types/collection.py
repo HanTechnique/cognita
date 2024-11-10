@@ -132,11 +132,13 @@ class UnassociateDataSourceWithCollectionDto(ConfiguredBaseModel):
 
 
 class CreateCollection(BaseCollection):
-    pass
+    owner_id: str = Field(
+        title="Owner of the collection",
+    )
 
 
 
-class CreateCollectionDto(CreateCollection):
+class CreateCollectionDto(BaseCollection):
     associated_data_sources: Optional[List[AssociateDataSourceWithCollection]] = Field(
         None, title="Data sources associated with the collection"
     )

@@ -1,7 +1,7 @@
 import asyncio
 
 import async_timeout
-from fastapi import Body, HTTPException
+from fastapi import Body, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
@@ -18,6 +18,7 @@ from backend.modules.query_controllers.multimodal.types import MultiModalQueryIn
 from backend.modules.query_controllers.types import GENERATION_TIMEOUT_SEC, Answer, Docs
 from backend.server.decorators import post, query_controller
 from langsmith import traceable
+from backend.server.auth import get_current_user
 
 EXAMPLES = {
     "vector-store-similarity": QUERY_WITH_VECTOR_STORE_RETRIEVER_PAYLOAD,
@@ -60,7 +61,8 @@ class MultiModalRAGQueryController(BaseQueryController):
     @traceable
     @post("/answer")
     async def answer(
-        self,
+        self,        
+        user: dict = Depends(get_current_user),
         request: MultiModalQueryInput = Body(
             openapi_examples=EXAMPLES,
         ),
@@ -70,7 +72,7 @@ class MultiModalRAGQueryController(BaseQueryController):
         """
         try:
             # Get the vector store
-            vector_store = await self._get_vector_store(request.collection_name)
+            vector_store = await self._get_vector_store(user, request.collection_name)
 
             # get retriever
             retriever = await self._get_retriever(
@@ -80,7 +82,7 @@ class MultiModalRAGQueryController(BaseQueryController):
             )
 
             # Get the knowledge graphs
-            knowledge_graphs = await self._get_knowledge_graphs(request.collection_name)
+            knowledge_graphs = await self._get_knowledge_graphs(user, request.collection_name)
             knowledge_documents = self._knowledges_search(knowledge_graphs, request.query)
             llm = self._get_llm(request.model_configuration, request.stream)
 

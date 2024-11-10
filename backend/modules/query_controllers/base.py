@@ -1,6 +1,7 @@
 import asyncio
 import json
 from typing import AsyncIterator
+from fastapi import Depends, HTTPException, status
 
 import async_timeout
 import requests
@@ -21,6 +22,7 @@ from backend.modules.graph.client import GRAPHRAG_STORE_CLIENT
 from backend.settings import settings
 from backend.types.core import ModelConfig
 from backend.types.core import Collection
+
 
 class BaseQueryController:
     required_metadata = [
@@ -59,18 +61,25 @@ class BaseQueryController:
         """
         return model_gateway.get_llm_from_model_config(model_configuration, stream)
 
-    async def _get_vector_store(self, collection_name: str):
+    async def _get_vector_store(self, user: dict, collection_name: str):
         """
-        Get the vector store for the collection
+        Get the vector store for the collection, but only if the user is authorized.
         """
+        user_id = user['sub']  # Implement user authentication
+
         client = await get_client()
         client = CollectionPrismaStore(client)
         collection = await client.aget_retrieve_collection_by_name(collection_name)
+
         if collection is None:
             raise HTTPException(status_code=404, detail="Collection not found")
 
         if not isinstance(collection, Collection):
             collection = Collection(**collection.model_dump())
+
+        # Authorization check:
+        if collection.owner_id != user_id:  # Assuming you have an owner_id field
+            raise HTTPException(status_code=403, detail="Forbidden")
 
         return VECTOR_STORE_CLIENT.get_vector_store(
             collection_name=collection.name,
@@ -78,10 +87,12 @@ class BaseQueryController:
                 model_name=collection.embedder_config.name
             ),
         )
-    async def _get_knowledge_graphs(self, collection_name: str):
+    async def _get_knowledge_graphs(self, user: dict, collection_name: str):
         """
         Get the knowledges for the collection
         """
+        user_id = user['sub']  # Implement user authentication
+
         client = await get_client()
         client = CollectionPrismaStore(client)
         collection = await client.aget_retrieve_collection_by_name(collection_name)
@@ -90,6 +101,10 @@ class BaseQueryController:
 
         if not isinstance(collection, Collection):
             collection = Collection(**collection.model_dump())
+
+        # Authorization check:
+        if collection.owner_id != user_id:  # Assuming you have an owner_id field
+            raise HTTPException(status_code=403, detail="Forbidden")
 
         knowledge_graphs = {}
         for koc in collection.knowledges:

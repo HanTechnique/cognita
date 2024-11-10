@@ -16,7 +16,8 @@ from backend.modules.metadata_store.prismastore import PrismaStore
 from backend.logger import logger
 from fastapi import HTTPException
 from backend.types.core import AssociatedDataSources
-
+from asyncpg.exceptions import UniqueViolationError
+from backend.server.auth import get_current_user
 import random
 import string
 
@@ -25,15 +26,16 @@ class CollectionPrismaStore(PrismaStore):
     def __init__(self, client: PrismaStore) -> None:
         self.db = client.db
 
-    async def aget_data_collection_ingestion_runs(
-        self, collection_name: str, data_source_fqn: str = None
+    async def aget_data_collection_ingestion_runs_by_user(
+        self, user: dict, collection_name: str, data_source_fqn: str = None
     ) -> List[CollectionDataIngestionRun]:
         """Get all data ingestion runs for a collection"""
+        user_id = user['sub']  # Implement user authentication
         try:
             data_collection_ingestion_runs: List[
                 "PrismaCollectionDataIngestionRun"
             ] = await self.db.collectioningestionruns.find_many(
-                where={"collection_name": collection_name}, order={"id": "desc"}
+                where={"collection_name": collection_name, "owner_id": user_id}, order={"id": "desc"}
             )
             return [
                 CollectionDataIngestionRun.model_validate(data_ir.model_dump())
@@ -43,16 +45,16 @@ class CollectionPrismaStore(PrismaStore):
             logger.exception(f"Failed to get data ingestion runs: {e}")
             raise HTTPException(status_code=500, detail=f"{e}")
     
-    async def aget_collection_by_name(
-        self, collection_name: str, no_cache: bool = True
+    async def aget_collection_by_name_and_user(
+        self, user: dict, collection_name: str, no_cache: bool = True
     ) -> Optional[Collection]:
         try:
+            user_id = user['sub']  # Implement user authentication
             collection: Optional[
                 "PrismaCollection"
-            ] = await self.db.collection.find_first(where={"name": collection_name},
+            ] = await self.db.collection.find_first(where={"name": collection_name, "owner_id": user_id},
                                                     include={"knowledges": {"include": {"knowledge": True,"collection": True}}}
             )
-
             if collection:
                 return Collection.model_validate(collection.model_dump())
             return None
@@ -62,9 +64,9 @@ class CollectionPrismaStore(PrismaStore):
                 status_code=500, detail="Failed to get collection by name"
             )
 
-    async def acreate_collection(self, collection: CreateCollection) -> Collection:
+    async def acreate_collection_by_user(self, user: dict, collection: CreateCollection) -> Collection:
         try:
-            existing_collection = await self.aget_collection_by_name(collection.name)
+            existing_collection = await self.aget_retrieve_collection_by_name_and_user(user, collection.name)
         except Exception as e:
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=e)
@@ -90,37 +92,41 @@ class CollectionPrismaStore(PrismaStore):
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=f"Error: {e}")
 
-    async def aget_retrieve_collection_by_name(
-        self, collection_name: str, no_cache: bool = True
+    async def aget_retrieve_collection_by_name_and_user(
+        self, user: dict, collection_name: str, no_cache: bool = True
     ) -> Optional[Collection]:
-        collection: "PrismaCollection" = await self.aget_collection_by_name(
+        collection: "PrismaCollection" = await self.aget_collection_by_name_and_user(user,
             collection_name, no_cache
         )
-        return Collection.model_validate(collection.model_dump())
+        if collection:
+            return Collection.model_validate(collection.model_dump())
 
-    async def aget_collections(self) -> List[Collection]:
+    async def aget_collections_by_user(self, user) -> List[Collection]:
         try:
+            user_id = user['sub']  # Implement user authentication
             collections: List["PrismaCollection"] = await self.db.collection.find_many(
+                where={"owner_id": user_id},
                 order={"id": "desc"}
-            )
+                )
             return [Collection.model_validate(c.model_dump()) for c in collections]
         except Exception as e:
             logger.exception(f"Failed to get collections: {e}")
             raise HTTPException(status_code=500, detail="Failed to get collections")
 
-    async def alist_collections(self) -> List[str]:
+    async def alist_collections_by_user(self, user) -> List[str]:
         try:
-            collections = await self.aget_collections()
+            collections = await self.aget_collections_by_user(user)
             return [collection.name for collection in collections]
         except Exception as e:
             logger.exception(f"Failed to list collections: {e}")
             raise HTTPException(status_code=500, detail="Failed to list collections")
 
-    async def adelete_collection(self, collection_name: str, include_runs=False):
+    async def adelete_collection_by_user(self, user: dict, collection_name: str, include_runs=False):
         try:
+            user_id = user['sub']  # Implement user authentication
             deleted_collection: Optional[
                 "PrismaCollection"
-            ] = await self.db.collection.delete(where={"name": collection_name})
+            ] = await self.db.collection.delete(where={"name": collection_name, "owner_id": user_id})
             if not deleted_collection:
                 raise HTTPException(
                     status_code=404,
@@ -138,11 +144,12 @@ class CollectionPrismaStore(PrismaStore):
             raise HTTPException(status_code=500, detail="Failed to delete collection")
     async def aassociate_data_source_with_collection(
         self,
+        user: dict,
         collection_name: str,
         data_source_association: AssociateDataSourceWithCollection,
     ) -> Collection:
         try:
-            existing_collection = await self.aget_collection_by_name(collection_name)
+            existing_collection = await self.aget_collection_by_name_and_user(user, collection_name)
         except Exception as e:
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=f"Error: {e}")

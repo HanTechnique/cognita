@@ -132,7 +132,7 @@ class PrismaStore(BaseMetadataStore):
             logger.exception(f"Failed to list data sources: {e}")
             raise HTTPException(status_code=500, detail="Failed to list data sources")
 
-    async def adelete_data_source(self, data_source_fqn: str) -> None:
+    async def adelete_data_source_by_user(self, user: dict, data_source_fqn: str) -> None:
         # Check if data source exists if not raise an error
         try:
             data_source = await self.aget_data_source_from_fqn(data_source_fqn)
@@ -149,7 +149,7 @@ class PrismaStore(BaseMetadataStore):
 
         # Check if data source is associated with any collection
         try:
-            collections = await self.aget_collections()
+            collections = await self.aget_collections_by_user(user)
         except Exception as e:
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=f"Error: {e}")

@@ -55,7 +55,7 @@ class BaseMetadataStore(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def adelete_data_source(self, data_source_fqn: str):
+    async def adelete_data_source_by_user(self, user: dict, data_source_fqn: str):
         """
         Delete a data source from the metadata store
         """

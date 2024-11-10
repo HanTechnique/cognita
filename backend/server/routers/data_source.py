@@ -1,4 +1,6 @@
 from urllib.parse import unquote
+from fastapi import Depends
+from backend.server.auth import get_current_user
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
@@ -55,13 +57,13 @@ async def add_data_source(
 
 
 @router.delete("/delete")
-async def delete_data_source(data_source_fqn: str):
+async def delete_data_source_by_user(data_source_fqn: str, user: dict = Depends(get_current_user)):
     """Delete a data source"""
     decoded_data_source_fqn = unquote(data_source_fqn)
     logger.info(f"Deleting data source: {decoded_data_source_fqn}")
     try:
         client = await get_client()
-        await client.adelete_data_source(decoded_data_source_fqn)
+        await client.adelete_data_source_by_user(user, decoded_data_source_fqn)
         return JSONResponse(content={"deleted": True})
     except HTTPException as exp:
         raise exp

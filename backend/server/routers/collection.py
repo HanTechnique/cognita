@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, Path, Request
+from fastapi import APIRouter, HTTPException, Path, Request, Depends
 from fastapi.responses import JSONResponse
+from backend.server.auth import get_current_user
 from backend.modules.metadata_store.collections.prismastore import CollectionPrismaStore
 
 from backend.indexer.collections.indexer import ingest_data as ingest_data_to_collection
@@ -21,13 +22,13 @@ router = APIRouter(prefix="/v1/collections", tags=["collections"])
 
 
 @router.get("")
-async def get_collections():
+async def get_collections_by_user(user: dict = Depends(get_current_user)):
     """API to list all collections with details"""
     try:
         logger.debug("Listing all the collections...")
         client = await get_client()
         client = CollectionPrismaStore(client)
-        collections = await client.aget_collections()
+        collections = await client.aget_collections_by_user(user)
         if collections is None:
             return JSONResponse(content={"collections": []})
         return JSONResponse(
@@ -39,11 +40,13 @@ async def get_collections():
 
 
 @router.get("/list")
-async def list_collections():
+async def list_collections_by_user(user: dict = Depends(get_current_user)):
     try:
         client = await get_client()
         client = CollectionPrismaStore(client)
-        collections = await client.alist_collections()
+        collections = await client.alist_collections_by_user(user)
+        if collections is None:
+            return JSONResponse()
         return JSONResponse(content={"collections": collections})
     except Exception as exp:
         logger.exception("Failed to list collections")
@@ -51,12 +54,12 @@ async def list_collections():
 
 
 @router.get("/{collection_name}")
-async def get_collection_by_name(collection_name: str = Path(title="Collection name")):
+async def get_collection_by_name_and_user(user: dict = Depends(get_current_user), collection_name: str = Path(title="Collection name")):
     """Get the collection config given its name"""
     try:
         client = await get_client()
         client = CollectionPrismaStore(client)
-        collection = await client.aget_collection_by_name(collection_name)
+        collection = await client.aget_collection_by_name_and_user(user, collection_name)
         if collection is None:
             return JSONResponse(content={"collection": []})
         return JSONResponse(content={"collection": collection.model_dump()})
@@ -68,17 +71,19 @@ async def get_collection_by_name(collection_name: str = Path(title="Collection n
 
 
 @router.post("")
-async def create_collection(collection: CreateCollectionDto):
+async def create_collection(collection: CreateCollectionDto, user: dict = Depends(get_current_user)):
     """API to create a collection"""
     try:
         logger.info(f"Creating collection {collection.name}...")
         client = await get_client()
         client = CollectionPrismaStore(client)
-        created_collection = await client.acreate_collection(
+        created_collection = await client.acreate_collection_by_user(
+            user,
             collection=CreateCollection(
                 name=collection.name,
                 description=collection.description,
                 embedder_config=collection.embedder_config,
+                owner_id=user['sub'],
             )
         )
         logger.info(f"Creating collection {collection.name} on vector db...")
@@ -93,13 +98,14 @@ async def create_collection(collection: CreateCollectionDto):
         if collection.associated_data_sources:
             for data_source in collection.associated_data_sources:
                 await client.aassociate_data_source_with_collection(
+                    user=user,
                     collection_name=created_collection.name,
                     data_source_association=AssociateDataSourceWithCollection(
                         data_source_fqn=data_source.data_source_fqn,
                         parser_config=data_source.parser_config,
                     ),
                 )
-            created_collection = await client.aget_collection_by_name(
+            created_collection = await client.aget_collection_by_name_and_user(user,
                 collection_name=created_collection.name
             )
         return JSONResponse(
@@ -115,12 +121,14 @@ async def create_collection(collection: CreateCollectionDto):
 @router.post("/associate_data_source")
 async def associate_data_source_to_collection(
     request: AssociateDataSourceWithCollectionDto,
+    user: dict = Depends(get_current_user)
 ):
     """Add a data source to the collection"""
     try:
         client = await get_client()
         client = CollectionPrismaStore(client)
         collection = await client.aassociate_data_source_with_collection(
+            user=user,
             collection_name=request.collection_name,
             data_source_association=AssociateDataSourceWithCollection(
                 data_source_fqn=request.data_source_fqn,
@@ -176,12 +184,12 @@ async def ingest_data(
 
 
 @router.delete("/{collection_name}")
-async def delete_collection(collection_name: str = Path(title="Collection name")):
+async def delete_collection_by_user(user: dict = Depends(get_current_user), collection_name: str = Path(title="Collection name")):
     """Delete collection given its name"""
     try:
         client = await get_client()
         client = CollectionPrismaStore(client)
-        await client.adelete_collection(collection_name, include_runs=True)
+        await client.adelete_collection_by_user(user, collection_name, include_runs=True)
         VECTOR_STORE_CLIENT.delete_collection(collection_name=collection_name)
         return JSONResponse(content={"deleted": True})
     except HTTPException as exp:
@@ -228,14 +236,15 @@ async def get_collection_status(
         }
     )
 @router.post("/{collection_name}/knowledges/{knowledge_name}")
-async def associate_knowledge_with_collection(
-    collection_name: str, knowledge_name: str
+async def associate_knowledge_with_collection_and_user(
+    collection_name: str, knowledge_name: str,
+    user: dict = Depends(get_current_user)
 ):
     client = await get_client()
     client = CollectionPrismaStore(client)
 
     try:
-        collection = await client.aget_collection_by_name(collection_name)
+        collection = await client.aget_collection_by_name_and_user(user, collection_name)
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found")
         
@@ -256,13 +265,14 @@ async def associate_knowledge_with_collection(
         raise HTTPException(status_code=500, detail=str(e))
 @router.delete("/{collection_name}/knowledges/{knowledge_name}")
 async def unassociate_knowledge_with_collection(
-    collection_name: str, knowledge_name: str
+    collection_name: str, knowledge_name: str,
+    user: dict = Depends(get_current_user)
 ):
     client = await get_client()
     client = CollectionPrismaStore(client)
 
     try:
-        collection = await client.aget_collection_by_name(collection_name)
+        collection = await client.aget_collection_by_name_and_user(user, collection_name)
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found")
         

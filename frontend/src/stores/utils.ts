@@ -12,6 +12,11 @@ const reauthMutex = new Mutex()
 export function createBaseQuery(baseQueryArgs: FetchBaseQueryArgs) {
   const baseQuery = fetchBaseQuery({
     prepareHeaders: (headers, { getState }) => {
+      const idToken = localStorage.getItem('idToken'); // Get token from storage
+      if (idToken) {
+        headers.set('Authorization', `Bearer ${idToken}`);
+      }
+  
       return headers
     },
     ...baseQueryArgs,

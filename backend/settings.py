@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     ML_REPO_NAME: str = ""
     VECTOR_DB_CONFIG: VectorDBConfig
     GRAPHRAG_CONFIG: VectorDBConfig
+    JWT_SECRET_KEY: str = "jwt.secret"
     LOCAL: bool = False
     TFY_HOST: str = ""
     TFY_API_KEY: str = ""
@@ -30,6 +31,9 @@ class Settings(BaseSettings):
     UNSTRUCTURED_IO_URL: str = ""
     UNSTRUCTURED_IO_API_KEY: str = ""
     PROCESS_POOL_WORKERS: int = 1
+    AUTH0_DOMAIN:str="hantech.auth0.com"
+    API_IDENTIFIER:str="JDDLTMncmXxrfSlAaFAtSygbkEETFYga"
+    ALGORITHMS: list[str] = ["RS256"]
     LOCAL_DATA_DIRECTORY: str = os.path.abspath(
         os.path.join(os.path.dirname(os.path.dirname(__file__)), "user_data")
     )

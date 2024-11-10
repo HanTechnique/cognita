@@ -37,3 +37,5 @@ nano-graphrag
 pymilvus
 nest-asyncio
 uvloop
+asyncpg
+PyJWT[crypto]
