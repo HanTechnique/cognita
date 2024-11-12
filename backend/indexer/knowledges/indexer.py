@@ -291,14 +291,14 @@ async def ingest_data_points(
 
 
 async def ingest_data(
-    request: IngestDataToKnowledgeDto, pool: Optional[Executor] = None
+    request: IngestDataToKnowledgeDto, user: dict, pool: Optional[Executor] = None
 ):
     """Ingest data into the knowledge"""
     try:
         client = await get_client()
     
         client = KnowledgePrismaStore(client)
-        knowledge = await client.aget_knowledge_by_name(request.knowledge_name)
+        knowledge = await client.aget_knowledge_by_name_and_user(request.knowledge_name, user)
 
         # convert to pydantic model if not already -> For prisma models
         if not isinstance(knowledge, Knowledge):

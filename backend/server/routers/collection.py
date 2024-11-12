@@ -248,7 +248,7 @@ async def associate_knowledge_with_collection_and_user(
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found")
         
-        knowledge = await client.aget_knowledge_by_name(knowledge_name) 
+        knowledge = await client.aget_knowledge_by_name_and_user(knowledge_name, user) 
         if not knowledge:
             raise HTTPException(status_code=404, detail="Knowledge not found")
         knowledge.collections = knowledge.collections or [] 
@@ -276,7 +276,7 @@ async def unassociate_knowledge_with_collection(
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found")
         
-        knowledge = await client.aget_knowledge_by_name(knowledge_name) 
+        knowledge = await client.aget_knowledge_by_name_by_user(knowledge_name, user) 
         if not knowledge:
             raise HTTPException(status_code=404, detail="Knowledge not found")
         knowledge.collections = knowledge.collections or [] 

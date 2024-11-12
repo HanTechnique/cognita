@@ -162,7 +162,8 @@ class CollectionPrismaStore(PrismaStore):
             )
 
         try:
-            data_source = await self.aget_data_source_from_fqn(
+            data_source = await self.aget_data_source_from_fqn_and_user(
+                user,
                 data_source_association.data_source_fqn
             )
         except Exception as e:
@@ -232,10 +233,10 @@ class CollectionPrismaStore(PrismaStore):
                 detail=f"Error: {e}",
             )
     async def aunassociate_data_source_with_collection(
-        self, collection_name: str, data_source_fqn: str
+        self, user: dict, collection_name: str, data_source_fqn: str
     ) -> Collection:
         try:
-            collection: Collection = await self.aget_collection_by_name(collection_name)
+            collection: Collection = await self.aget_collection_by_name_and_user(user, collection_name)
         except Exception as e:
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=f"Error: {e}")
@@ -248,7 +249,7 @@ class CollectionPrismaStore(PrismaStore):
             )
 
         try:
-            data_source = await self.aget_data_source_from_fqn(data_source_fqn)
+            data_source = await self.aget_data_source_from_fqn_and_user(user, data_source_fqn)
         except Exception as e:
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=f"Error: {e}")
@@ -293,7 +294,7 @@ class CollectionPrismaStore(PrismaStore):
             updated_collection: Optional[
                 "PrismaCollection"
             ] = await self.db.collection.update(
-                where={"name": collection_name},
+                where={"name": collection_name, "owner_id": user['sub']},
                 data={
                     "associated_data_sources": json.dumps(
                         updated_associated_data_sources

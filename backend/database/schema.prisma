@@ -12,6 +12,7 @@ model DataSource {
     id       Int    @id @default(autoincrement())
     type     String
     uri      String @unique
+    owner_id             String?
     metadata Json?
     fqn      String @unique
 
@@ -34,6 +35,7 @@ model Knowledge {
     id                      Int     @id @default(autoincrement())
     name                    String  @unique
     description             String?
+    owner_id             String?
     // Knowledge can have multiple data sources
     associated_data_sources Json    @default("{}")
     collections              KnowledgeOnCollection[]  @relation("CollectionKnowledge")
@@ -81,6 +83,7 @@ model KnowledgeIngestionRuns {
 model RagApps {
     id        Int      @id @default(autoincrement())
     name      String   @unique
+    owner_id             String?
     config    Json
     questions String[]
 

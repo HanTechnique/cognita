@@ -46,13 +46,13 @@ class PrismaStore(BaseMetadataStore):
             logger.exception(f"Failed to connect to Prisma: {e}")
             raise HTTPException(status_code=500, detail="Failed to connect to Prisma")
 
-    async def aget_knowledge_by_name(
-        self, knowledge_name: str, no_cache: bool = True
+    async def aget_knowledge_by_name_and_user(
+        self, knowledge_name: str, user: dict, no_cache: bool = True
     ) -> Optional[Knowledge]:
         try:
             knowledge: Optional[
                 "PrismaKnowledge"
-            ] = await self.db.knowledge.find_first(where={"name": knowledge_name})
+            ] = await self.db.knowledge.find_first(where={"name": knowledge_name, "owner_id": user['sub']})
             if knowledge:
                 return Knowledge.model_validate(knowledge.model_dump())
             return None
@@ -67,11 +67,11 @@ class PrismaStore(BaseMetadataStore):
     ######
     # DATA SOURCE APIS
     ######
-    async def aget_data_source_from_fqn(self, fqn: str) -> Optional[DataSource]:
+    async def aget_data_source_from_fqn_and_user(self, user: dict, fqn: str) -> Optional[DataSource]:
         try:
             data_source: Optional[
                 "PrismaDataSource"
-            ] = await self.db.datasource.find_first(where={"fqn": fqn})
+            ] = await self.db.datasource.find_first(where={"fqn": fqn, "owner_id": user['sub']})
             if data_source:
                 return DataSource.model_validate(data_source.model_dump())
             return None
@@ -79,9 +79,9 @@ class PrismaStore(BaseMetadataStore):
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=f"Error: {e}")
 
-    async def acreate_data_source(self, data_source: CreateDataSource) -> DataSource:
+    async def acreate_data_source_by_user(self, data_source: CreateDataSource, user: dict) -> DataSource:
         try:
-            existing_data_source = await self.aget_data_source_from_fqn(data_source.fqn)
+            existing_data_source = await self.aget_data_source_from_fqn_and_user(user, data_source.fqn)
         except Exception as e:
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=f"Error: {e}")
@@ -95,6 +95,7 @@ class PrismaStore(BaseMetadataStore):
 
         try:
             data = data_source.model_dump()
+            data["owner_id"] = user["sub"]
             data["metadata"] = json.dumps(data["metadata"])
             data_source: "PrismaDataSource" = await self.db.datasource.create(data)
             logger.info(f"Created data source: {data_source}")
@@ -103,9 +104,10 @@ class PrismaStore(BaseMetadataStore):
             logger.exception(f"Failed to create data source: {e}")
             raise HTTPException(status_code=500, detail=f"Error: {e}")
 
-    async def aget_data_sources(self) -> List[DataSource]:
+    async def aget_data_sources_by_user(self, user: dict) -> List[DataSource]:
         try:
             data_sources: List["PrismaDataSource"] = await self.db.datasource.find_many(
+                where={"owner_id": user['sub']},
                 order={"id": "desc"}
             )
             return [DataSource.model_validate(ds.model_dump()) for ds in data_sources]
@@ -122,11 +124,11 @@ class PrismaStore(BaseMetadataStore):
             )
 
     
-    async def alist_data_sources(
-        self,
+    async def alist_data_sources_by_user(
+        self, user: dict
     ) -> List[Dict[str, str]]:
         try:
-            data_sources = await self.aget_data_sources()
+            data_sources = await self.aget_data_sources_by_user(user)
             return [data_source.model_dump() for data_source in data_sources]
         except Exception as e:
             logger.exception(f"Failed to list data sources: {e}")
@@ -135,7 +137,7 @@ class PrismaStore(BaseMetadataStore):
     async def adelete_data_source_by_user(self, user: dict, data_source_fqn: str) -> None:
         # Check if data source exists if not raise an error
         try:
-            data_source = await self.aget_data_source_from_fqn(data_source_fqn)
+            data_source = await self.aget_data_source_from_fqn_and_user(user, data_source_fqn)
         except Exception as e:
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=f"Error: {e}")
@@ -202,12 +204,12 @@ class PrismaStore(BaseMetadataStore):
     ######
     # RAG APPLICATION APIS
     ######
-    async def aget_rag_app(self, app_name: str) -> Optional[RagApplication]:
+    async def aget_rag_app_by_user(self, app_name: str, user: dict) -> Optional[RagApplication]:
         """Get a RAG application from the metadata store"""
         try:
             rag_app: Optional[
                 "PrismaRagApplication"
-            ] = await self.db.ragapps.find_first(where={"name": app_name})
+            ] = await self.db.ragapps.find_first(where={"name": app_name, "owner_id": user['sub']})
             if rag_app:
                 return RagApplication.model_validate(rag_app.model_dump())
             return None
@@ -217,10 +219,10 @@ class PrismaStore(BaseMetadataStore):
                 status_code=500, detail="Failed to get RAG application by name"
             )
 
-    async def acreate_rag_app(self, app: RagApplication) -> RagApplication:
+    async def acreate_rag_app_by_user(self, app: RagApplication, user: dict) -> RagApplication:
         """Create a RAG application in the metadata store"""
         try:
-            existing_app = await self.aget_rag_app(app.name)
+            existing_app = await self.aget_rag_app_by_user(app.name, user)
         except Exception as e:
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=e)

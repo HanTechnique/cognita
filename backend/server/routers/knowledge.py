@@ -15,17 +15,21 @@ from backend.types.knowledge import (
     IngestDataToKnowledgeDto,
     UnassociateDataSourceWithKnowledgeDto,
 )
+
+from fastapi import Depends
+from backend.server.auth import get_current_user
+
 router = APIRouter(prefix="/v1/knowledges", tags=["knowledges"])
 
 
 @router.get("")
-async def get_knowledges():
+async def get_knowledges_by_user(user: dict = Depends(get_current_user)):
     """API to list all knowledges with details"""
     try:
         logger.debug("Listing all the knowledges...")
         client = await get_client()
         client = KnowledgePrismaStore(client)
-        knowledges = await client.aget_knowledges()
+        knowledges = await client.aget_knowledges_by_user(user)
         if knowledges is None:
             return JSONResponse(content={"knowledges": []})
         return JSONResponse(
@@ -37,11 +41,11 @@ async def get_knowledges():
 
 
 @router.get("/list")
-async def list_knowledges():
+async def list_knowledges_by_user(user: dict = Depends(get_current_user)):
     try:
         client = await get_client()
         client = KnowledgePrismaStore(client)
-        knowledges = await client.alist_knowledges()
+        knowledges = await client.alist_knowledges_by_user(user)
         return JSONResponse(content={"knowledges": knowledges})
     except Exception as exp:
         logger.exception("Failed to list knowledges")
@@ -49,12 +53,12 @@ async def list_knowledges():
 
 
 @router.get("/{knowledge_name}")
-async def get_knowledge_by_name(knowledge_name: str = Path(title="Knowledge name")):
+async def get_knowledge_by_name_and_user(knowledge_name: str = Path(title="Knowledge name"), user: dict = Depends(get_current_user)):
     """Get the knowledge config given its name"""
     try:
         client = await get_client()
         client = KnowledgePrismaStore(client)
-        knowledge = await client.aget_knowledge_by_name(knowledge_name)
+        knowledge = await client.aget_knowledge_by_name_and_user(knowledge_name, user)
         if knowledge is None:
             return JSONResponse(content={"knowledge": []})
         return JSONResponse(content={"knowledge": knowledge.model_dump()})
@@ -66,17 +70,18 @@ async def get_knowledge_by_name(knowledge_name: str = Path(title="Knowledge name
 
 
 @router.post("")
-async def create_knowledge(knowledge: CreateKnowledgeDto):
+async def create_knowledge_by_user(knowledge: CreateKnowledgeDto, user: dict = Depends(get_current_user)):
     """API to create a knowledge"""
     try:
         logger.info(f"Creating knowledge {knowledge.name}...")
         client = await get_client()
         client = KnowledgePrismaStore(client)
-        created_knowledge = await client.acreate_knowledge(
+        created_knowledge = await client.acreate_knowledge_by_user(
+            user,
             knowledge=CreateKnowledge(
                 name=knowledge.name,
                 description=knowledge.description,
-                embedder_config=knowledge.embedder_config,
+                owner_id=user['sub'],
             )
         )
         logger.info(f"Creating knowledge {knowledge.name} on vector db...")
@@ -88,14 +93,17 @@ async def create_knowledge(knowledge: CreateKnowledgeDto):
         if knowledge.associated_data_sources:
             for data_source in knowledge.associated_data_sources:
                 await client.aassociate_data_source_with_knowledge(
+                    user,
                     knowledge_name=created_knowledge.name,
                     data_source_association=AssociateDataSourceWithKnowledge(
                         data_source_fqn=data_source.data_source_fqn,
                         parser_config=data_source.parser_config,
                     ),
                 )
-            created_knowledge = await client.aget_knowledge_by_name(
+            created_knowledge = await client.aget_knowledge_by_name_and_user(
+                user=user,
                 knowledge_name=created_knowledge.name
+                
             )
         return JSONResponse(
             content={"knowledge": created_knowledge.model_dump()}, status_code=201
@@ -110,12 +118,14 @@ async def create_knowledge(knowledge: CreateKnowledgeDto):
 @router.post("/associate_data_source")
 async def associate_data_source_to_knowledge(
     request: AssociateDataSourceWithKnowledgeDto,
+    user: dict = Depends(get_current_user)
 ):
     """Add a data source to the knowledge"""
     try:
         client = await get_client()
         client = KnowledgePrismaStore(client)
         knowledge = await client.aassociate_data_source_with_knowledge(
+            user=user,
             knowledge_name=request.knowledge_name,
             data_source_association=AssociateDataSourceWithKnowledge(
                 data_source_fqn=request.data_source_fqn,

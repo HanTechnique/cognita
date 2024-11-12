@@ -130,14 +130,16 @@ class UnassociateDataSourceWithKnowledgeDto(ConfiguredBaseModel):
 
 
 
-class CreateKnowledge(BaseKnowledge):
-    pass
+class CreateKnowledge(BaseKnowledge):    
+    owner_id: str = Field(
+        title="Owner of the collection",
+    )
 
 
 
 
 
-class CreateKnowledgeDto(CreateKnowledge):
+class CreateKnowledgeDto(BaseKnowledge):
     associated_data_sources: Optional[List[AssociateDataSourceWithKnowledge]] = Field(
         None, title="Data sources associated with the knowledge"
     )

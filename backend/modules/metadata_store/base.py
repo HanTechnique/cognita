@@ -24,21 +24,21 @@ class BaseMetadataStore(ABC):
     #####
 
     @abstractmethod
-    async def aget_data_source_from_fqn(self, fqn: str) -> Optional[DataSource]:
+    async def aget_data_source_from_fqn_and_user(self, user: dict, fqn: str) -> Optional[DataSource]:
         """
         Get a data source from the metadata store by fqn
         """
         raise NotImplementedError()
 
     @abstractmethod
-    async def acreate_data_source(self, data_source: CreateDataSource) -> DataSource:
+    async def acreate_data_source_by_user(self, data_source: CreateDataSource, user: dict) -> DataSource:
         """
         Create a data source in the metadata store
         """
         raise NotImplementedError()
 
     @abstractmethod
-    async def aget_data_sources(self) -> List[DataSource]:
+    async def aget_data_sources_by_user(self, user: dict) -> List[DataSource]:
         """
         Get all data sources from the metadata store
         """
@@ -46,8 +46,8 @@ class BaseMetadataStore(ABC):
 
 
     @abstractmethod
-    async def alist_data_sources(
-        self,
+    async def alist_data_sources_by_user(
+        self, user: dict
     ) -> List[Dict[str, str]]:
         """
         List all data source names from metadata store
@@ -67,14 +67,14 @@ class BaseMetadataStore(ABC):
     ####
 
     @abstractmethod
-    async def aget_rag_app(self, app_name: str) -> Optional[RagApplicationDto]:
+    async def aget_rag_app_by_user(self, app_name: str, user: dict) -> Optional[RagApplicationDto]:
         """
         Get a RAG application from the metadata store by name
         """
         raise NotImplementedError()
 
     @abstractmethod
-    async def acreate_rag_app(self, app: RagApplication) -> RagApplicationDto:
+    async def acreate_rag_app_by_user(self, app: RagApplication, user: dict) -> RagApplicationDto:
         """
         create a RAG application in the metadata store
         """

@@ -13,11 +13,11 @@ router = APIRouter(prefix="/v1/data_source", tags=["data_source"])
 
 
 @router.get("")
-async def get_data_source():
+async def get_data_source_by_user(user: dict = Depends(get_current_user)):
     """Get data sources"""
     try:
         client = await get_client()
-        data_sources = await client.aget_data_sources()
+        data_sources = await client.aget_data_sources_by_user(user)
         return JSONResponse(
             content={"data_sources": [obj.model_dump() for obj in data_sources]}
         )
@@ -27,11 +27,11 @@ async def get_data_source():
 
 
 @router.get("/list")
-async def list_data_sources():
+async def list_data_sources_by_user(user: dict = Depends(get_current_user)):
     """Get data sources"""
     try:
         client = await get_client()
-        data_sources = await client.alist_data_sources()
+        data_sources = await client.alist_data_sources_by_user(user)
         return JSONResponse(content={"data_sources": data_sources})
     except Exception as exp:
         logger.exception("Failed to list data sources")
@@ -39,13 +39,14 @@ async def list_data_sources():
 
 
 @router.post("")
-async def add_data_source(
+async def add_data_source_by_user(
     data_source: CreateDataSource,
+    user: dict = Depends(get_current_user)
 ):
     """Create a data source for the given collection"""
     try:
         client = await get_client()
-        created_data_source = await client.acreate_data_source(data_source=data_source)
+        created_data_source = await client.acreate_data_source_by_user(user=user,data_source=data_source)
         return JSONResponse(
             content={"data_source": created_data_source.model_dump()}, status_code=201
         )

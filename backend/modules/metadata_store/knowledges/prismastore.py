@@ -42,9 +42,9 @@ class KnowledgePrismaStore(PrismaStore):
             raise HTTPException(status_code=500, detail=f"{e}")
     
 
-    async def acreate_knowledge(self, knowledge: CreateKnowledge) -> Knowledge:
+    async def acreate_knowledge_by_user(self, user: dict, knowledge: CreateKnowledge) -> Knowledge:
         try:
-            existing_knowledge = await self.aget_knowledge_by_name(knowledge.name)
+            existing_knowledge = await self.aget_knowledge_by_name_and_user(knowledge.name, user)
         except Exception as e:
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=e)
@@ -59,9 +59,6 @@ class KnowledgePrismaStore(PrismaStore):
         try:
             logger.info(f"Creating knowledge: {knowledge.model_dump()}")
             knowledge_data = knowledge.model_dump()
-            knowledge_data["embedder_config"] = json.dumps(
-                knowledge_data["embedder_config"]
-            )
             knowledge: "PrismaKnowledge" = await self.db.knowledge.create(
                 data=knowledge_data
             )
@@ -78,9 +75,11 @@ class KnowledgePrismaStore(PrismaStore):
         )
         return Knowledge.model_validate(knowledge.model_dump())
 
-    async def aget_knowledges(self) -> List[Knowledge]:
+    async def aget_knowledges_by_user(self, user: dict) -> List[Knowledge]:
         try:
+            user_id = user['sub']  # Implement user authentication
             knowledges: List["PrismaKnowledge"] = await self.db.knowledge.find_many(
+                where={"owner_id": user_id},
                 order={"id": "desc"}
             )
             return [Knowledge.model_validate(c.model_dump()) for c in knowledges]
@@ -88,9 +87,9 @@ class KnowledgePrismaStore(PrismaStore):
             logger.exception(f"Failed to get knowledges: {e}")
             raise HTTPException(status_code=500, detail="Failed to get knowledges")
 
-    async def alist_knowledges(self) -> List[str]:
+    async def alist_knowledges_by_user(self, user: dict) -> List[str]:
         try:
-            knowledges = await self.aget_knowledges()
+            knowledges = await self.aget_knowledges_by_user(user)
             return [knowledge.name for knowledge in knowledges]
         except Exception as e:
             logger.exception(f"Failed to list knowledges: {e}")
@@ -118,11 +117,12 @@ class KnowledgePrismaStore(PrismaStore):
             raise HTTPException(status_code=500, detail="Failed to delete knowledge")
     async def aassociate_data_source_with_knowledge(
         self,
+        user: dict,
         knowledge_name: str,
         data_source_association: AssociateDataSourceWithKnowledge,
     ) -> Knowledge:
         try:
-            existing_knowledge = await self.aget_knowledge_by_name(knowledge_name)
+            existing_knowledge = await self.aget_knowledge_by_name_and_user(knowledge_name, user)
         except Exception as e:
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=f"Error: {e}")
@@ -135,7 +135,8 @@ class KnowledgePrismaStore(PrismaStore):
             )
 
         try:
-            data_source = await self.aget_data_source_from_fqn(
+            data_source = await self.aget_data_source_from_fqn_and_user(
+                user,
                 data_source_association.data_source_fqn
             )
         except Exception as e:
@@ -205,10 +206,10 @@ class KnowledgePrismaStore(PrismaStore):
                 detail=f"Error: {e}",
             )
     async def aunassociate_data_source_with_knowledge(
-        self, knowledge_name: str, data_source_fqn: str
+        self, user: dict, knowledge_name: str, data_source_fqn: str
     ) -> Knowledge:
         try:
-            knowledge: Knowledge = await self.aget_knowledge_by_name(knowledge_name)
+            knowledge: Knowledge = await self.aget_knowledge_by_name_and_user(knowledge_name, user)
         except Exception as e:
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=f"Error: {e}")
@@ -221,7 +222,7 @@ class KnowledgePrismaStore(PrismaStore):
             )
 
         try:
-            data_source = await self.aget_data_source_from_fqn(data_source_fqn)
+            data_source = await self.aget_data_source_from_fqn_and_user(user, data_source_fqn)
         except Exception as e:
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=f"Error: {e}")

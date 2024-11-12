@@ -7,10 +7,12 @@ from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse
 from truefoundry import ml
 from truefoundry.ml import DataDirectory
+from fastapi import Depends
+from backend.server.auth import get_current_user
 
 from backend.logger import logger
 from backend.modules.model_gateway.model_gateway import model_gateway
-from backend.server.routers.data_source import add_data_source
+from backend.server.routers.data_source import add_data_source_by_user
 from backend.settings import settings
 from backend.types.core import CreateDataSource, ModelType, UploadToDataDirectoryDto
 
@@ -19,6 +21,7 @@ router = APIRouter(prefix="/v1/internal", tags=["internal"])
 
 @router.post("/upload-to-local-directory")
 async def upload_to_docker_directory(
+    user: dict = Depends(get_current_user),
     upload_name: str = Form(
         default_factory=lambda: str(uuid.uuid4()), regex=r"^[a-z][a-z0-9-]*$"
     ),
@@ -58,7 +61,7 @@ async def upload_to_docker_directory(
         )
 
         # Add the data source to the metadata store.
-        return await add_data_source(data_source)
+        return await add_data_source_by_user(data_source, user)
     except Exception as ex:
         logger.exception(f"Error uploading files to directory: {ex}")
         return JSONResponse(
@@ -68,7 +71,8 @@ async def upload_to_docker_directory(
 
 
 @router.post("/upload-to-data-directory")
-async def upload_to_data_directory(req: UploadToDataDirectoryDto):
+async def upload_to_data_directory(req: UploadToDataDirectoryDto,
+    user: dict = Depends(get_current_user)):
     """This function uploads files to the data directory given by the name req.upload_name"""
     try:
         if settings.ML_REPO_NAME == "":
