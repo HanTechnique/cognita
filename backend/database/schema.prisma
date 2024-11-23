@@ -1,98 +1,158 @@
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
-    provider             = "prisma-client-py"
-    recursive_type_depth = 5
+  provider             = "prisma-client-py"
+  recursive_type_depth = 5
+  enable_experimental_decimal = true  // Add this line
+
 }
 
 model DataSource {
-    id       Int    @id @default(autoincrement())
-    type     String
-    uri      String @unique
-    owner_id             String?
-    metadata Json?
-    fqn      String @unique
+  id       Int     @id @default(autoincrement())
+  type     String
+  uri      String  @unique
+  owner_id String?
+  metadata Json?
+  fqn      String  @unique
+  owner    User?   @relation("DataSourceUser", fields: [owner_id], references: [auth0_id], onDelete: SetNull)
 
-    @@map("data_sources")
+  @@map("data_sources")
 }
 
 model Collection {
-    id                      Int     @id @default(autoincrement())
-    name                    String  @unique
-    description             String?
-    owner_id             String?
-    embedder_config         Json
-    // Collection can have multiple data sources
-    associated_data_sources Json    @default("{}")
-    knowledges              KnowledgeOnCollection[]  @relation("CollectionKnowledge")
+  id                      Int                     @id @default(autoincrement())
+  name                    String                  @unique
+  description             String?
+  owner_id                String?
+  embedder_config         Json
+  // Collection can have multiple data sources
+  associated_data_sources Json                    @default("{}")
+  knowledges              KnowledgeOnCollection[] @relation("CollectionKnowledge")
+  owner                   User?                   @relation("CollectionUser", fields: [owner_id], references: [auth0_id], onDelete: SetNull)
 
-    @@map("collections")
+  @@map("collections")
 }
-model Knowledge {
-    id                      Int     @id @default(autoincrement())
-    name                    String  @unique
-    description             String?
-    owner_id             String?
-    // Knowledge can have multiple data sources
-    associated_data_sources Json    @default("{}")
-    collections              KnowledgeOnCollection[]  @relation("CollectionKnowledge")
 
-    @@map("knowledges")
+model Knowledge {
+  id                      Int                     @id @default(autoincrement())
+  name                    String                  @unique
+  description             String?
+  owner_id                  String?
+  // Knowledge can have multiple data sources
+  associated_data_sources Json                    @default("{}")
+  collections             KnowledgeOnCollection[] @relation("CollectionKnowledge")
+  owner                   User?                   @relation("KnowledgeUser", fields: [owner_id], references: [auth0_id], onDelete: SetNull)
+
+  @@map("knowledges")
 }
 
 model KnowledgeOnCollection {
-    collectionId Int
-    knowledgeId  Int
-    @@id([collectionId, knowledgeId])
-    @@map("knowledge_on_collection") 
+  collectionId Int
+  knowledgeId  Int
 
-    collection Collection @relation("CollectionKnowledge",fields: [collectionId], references: [id])
-    knowledge  Knowledge  @relation("CollectionKnowledge",fields: [knowledgeId], references: [id])
+  collection Collection @relation("CollectionKnowledge", fields: [collectionId], references: [id])
+  knowledge  Knowledge  @relation("CollectionKnowledge", fields: [knowledgeId], references: [id])
+
+  @@id([collectionId, knowledgeId])
+  @@map("knowledge_on_collection")
 }
 
 model CollectionIngestionRuns {
-    id                     Int     @id @default(autoincrement())
-    name                   String  @unique
-    collection_name        String
-    data_source_fqn        String
-    parser_config          Json
-    data_ingestion_mode    String
-    status                 String
-    raise_error_on_failure Boolean
-    errors                 Json?
+  id                     Int     @id @default(autoincrement())
+  name                   String  @unique
+  collection_name        String
+  data_source_fqn        String
+  parser_config          Json
+  data_ingestion_mode    String
+  status                 String
+  raise_error_on_failure Boolean
+  errors                 Json?
 
-    @@map("collection_ingestion_runs")
+  @@map("collection_ingestion_runs")
 }
 
 model KnowledgeIngestionRuns {
-    id                     Int     @id @default(autoincrement())
-    name                   String  @unique
-    knowledge_name        String
-    data_source_fqn        String
-    parser_config          Json
-    data_ingestion_mode    String
-    status                 String
-    raise_error_on_failure Boolean
-    errors                 Json?
+  id                     Int     @id @default(autoincrement())
+  name                   String  @unique
+  knowledge_name         String
+  data_source_fqn        String
+  parser_config          Json
+  data_ingestion_mode    String
+  status                 String
+  raise_error_on_failure Boolean
+  errors                 Json?
 
-    @@map("knowledge_ingestion_runs")
+  @@map("knowledge_ingestion_runs")
 }
+
 model RagApps {
-    id        Int      @id @default(autoincrement())
-    name      String   @unique
-    owner_id             String?
-    config    Json
-    questions String[]
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  owner_id  String?
+  owner     User?    @relation("RagAppsUser", fields: [owner_id], references: [auth0_id], onDelete: SetNull)
+  config    Json
+  questions String[]
 
-    @@map("rag_apps")
+  @@map("rag_apps")
 }
 
-enum Role {
-    USER
-    ADMIN
+model User {
+  id       Int     @id @default(autoincrement())
+  name         String       @unique
+  email        String       @unique
+  auth0_id     String?       @unique
+  collections  Collection[] @relation("CollectionUser")
+  knowledges   Knowledge[]  @relation("KnowledgeUser")
+  data_sources DataSource[] @relation("DataSourceUser")
+  owned_teams  Team[]       @relation("TeamOwner")
+  teams        UserOnTeam[] @relation("UserTeam")
+  rag_apps     RagApps[]    @relation("RagAppsUser")
+
+  @@map("users")
+}
+
+model UserOnTeam {
+  user_id   String
+  team_id   Int
+  role      RoleType
+  joined_at DateTime
+  team      Team     @relation("UserTeam", fields: [team_id], references: [id])
+  user      User     @relation("UserTeam", fields: [user_id], references: [auth0_id])
+
+  @@id([user_id, team_id])
+  @@map("user_on_team")
+}
+
+model Team {
+  id       Int          @id @default(autoincrement())
+  name     String       @unique
+  type     String       
+  plan_id  Int?
+  owner_id String?
+  owner    User?        @relation("TeamOwner", fields: [owner_id], references: [auth0_id], onDelete: SetNull)
+  users    UserOnTeam[] @relation("UserTeam")
+
+  @@map("teams")
+}
+
+model Plan {
+  id             Int      @id @default(autoincrement())
+  name           String   @unique // E.g., "Free", "Plus"
+  price          Decimal // E.g., 0.00, 5.00 
+  requestsPerDay Int[] // E.g., 10, 100
+  models         String[] // Array of allowed models, e.g., ["4o-mini"] or ["4o-mini", "4o"] 
+
+  @@map("plans")
+}
+
+enum RoleType {
+  EDITOR
+  VIEWER
+  ADMIN
+  SUPER_ADMIN
 }
 
 // From project root:

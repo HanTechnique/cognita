@@ -297,7 +297,7 @@ async def ingest_data(
     try:
         client = await get_client()
         client = CollectionPrismaStore(client)
-        collection = await client.aget_collection_by_name(request.collection_name)
+        collection = await client.aget_retrieve_collection_by_name_and_user(request.collection_name)
 
         # convert to pydantic model if not already -> For prisma models
         if not isinstance(collection, Collection):

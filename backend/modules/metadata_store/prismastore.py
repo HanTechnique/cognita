@@ -237,6 +237,7 @@ class PrismaStore(BaseMetadataStore):
         try:
             logger.info(f"Creating RAG application: {app.model_dump()}")
             rag_app_data = app.model_dump()
+            rag_app_data["owner_id"] = user["sub"]
             rag_app_data["config"] = json.dumps(rag_app_data["config"])
             rag_app: "PrismaRagApplication" = await self.db.ragapps.create(
                 data=rag_app_data
@@ -246,10 +247,10 @@ class PrismaStore(BaseMetadataStore):
             logger.exception(f"Error: {e}")
             raise HTTPException(status_code=500, detail=f"Error: {e}")
 
-    async def alist_rag_apps(self) -> List[str]:
+    async def alist_rag_apps_by_user(self, user: dict) -> List[str]:
         """List all RAG applications from the metadata store"""
         try:
-            rag_apps: List["PrismaRagApplication"] = await self.db.ragapps.find_many()
+            rag_apps: List["PrismaRagApplication"] = await self.db.ragapps.find_many(where={"owner_id": user['sub']})
             return [rag_app.name for rag_app in rag_apps]
         except Exception as e:
             logger.exception(f"Failed to list RAG applications: {e}")

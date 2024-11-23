@@ -9,6 +9,9 @@ from fastapi.responses import JSONResponse
 from backend.modules.query_controllers.query_controller import QUERY_CONTROLLER_REGISTRY
 from backend.server.routers.collection import router as collection_router
 from backend.server.routers.knowledge import router as knowledge_router
+from backend.server.routers.users import router as users_router
+from backend.server.routers.teams import router as teams_router
+from backend.server.routers.plans import router as plans_router
 
 from backend.server.routers.components import router as components_router
 from backend.server.routers.data_source import router as datasource_router
@@ -29,7 +32,6 @@ async def _process_pool_lifespan_manager(app: FastAPI):
     yield  # FastAPI runs here
     if app.state.process_pool is not None:
         app.state.process_pool.shutdown(wait=True)
-
 
 # FastAPI Initialization
 app = FastAPI(
@@ -53,19 +55,19 @@ def health_check():
     return JSONResponse(content={"status": "OK"})
 
 
-@app.get('/api')
-async def protected_route(user: dict = Depends(get_current_user)):
-    return {"user": user}
-
-
 app.include_router(components_router)
 app.include_router(datasource_router)
 app.include_router(rag_apps_router)
 app.include_router(collection_router)
 app.include_router(knowledge_router)
 app.include_router(internal_router)
+app.include_router(users_router)
+app.include_router(teams_router)
+app.include_router(plans_router)
+
 
 # Register Query Controllers dynamically as FastAPI routers
 for cls in QUERY_CONTROLLER_REGISTRY.values():
     router: APIRouter = cls.get_router()
     app.include_router(router)
+

@@ -81,7 +81,7 @@ class BaseMetadataStore(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def alist_rag_apps(self) -> List[str]:
+    async def alist_rag_apps_by_user(self, user: dict) -> List[str]:
         """
         List all RAG application names from metadata store
         """
