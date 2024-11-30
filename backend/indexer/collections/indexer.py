@@ -291,13 +291,13 @@ async def ingest_data_points(
 
 
 async def ingest_data(
-    request: IngestDataToCollectionDto, pool: Optional[Executor] = None
+    request: IngestDataToCollectionDto, user: Dict, pool: Optional[Executor] = None
 ):
     """Ingest data into the collection"""
     try:
         client = await get_client()
         client = CollectionPrismaStore(client)
-        collection = await client.aget_retrieve_collection_by_name_and_user(request.collection_name)
+        collection = await client.aget_retrieve_collection_by_name_and_user(user, request.collection_name)
 
         # convert to pydantic model if not already -> For prisma models
         if not isinstance(collection, Collection):

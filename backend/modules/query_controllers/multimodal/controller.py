@@ -81,9 +81,6 @@ class MultiModalRAGQueryController(BaseQueryController):
                 retriever_config=request.retriever_config,
             )
 
-            # Get the knowledge graphs
-            knowledge_graphs = await self._get_knowledge_graphs(user, request.collection_name)
-            knowledge_documents = self._knowledges_search(knowledge_graphs, request.query)
             llm = self._get_llm(request.model_configuration, request.stream)
 
             try:
@@ -111,7 +108,6 @@ class MultiModalRAGQueryController(BaseQueryController):
             else:
                 outputs = await setup_and_retrieval.ainvoke(request.query)
             if "context" in outputs:
-                outputs["context"].extend(knowledge_documents) 
                 docs = outputs["context"]
 
                 for doc in docs:

@@ -9,13 +9,11 @@ import {
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import AddDataSourceToCollection from './AddDataSourceToCollection'
-import AddKnowledgeToCollection from './AddKnowledgetoCollection'
 import CollectionCard from './CollectionCard'
 import NewCollection from './NewCollection'
 import NoCollections from './NoCollections'
 import RunsHistoryDrawer from './RunsHistoryDrawer'
 import DataSourcesTable from './DataSourcesTable'
-import KnowledgesTable from './KnowledgesTable'
 
 const Collections = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -26,7 +24,6 @@ const Collections = () => {
     string | undefined
   >()
   const [openDataSourceLinkForm, setOpenDataSourceLinkForm] = useState(false)
-  const [openKnowledgeLinkForm, setOpenKnowledgeLinkForm] = useState(false)
   const [runsHistoryDrawerOpen, setRunsHistoryDrawerOpen] = useState(false)
   const [selectedDataSourceFqn, setSelectedDataSourceFqn] = useState('')
 
@@ -74,22 +71,6 @@ const Collections = () => {
 
     return rows
   }, [collectionDetails])
-  const knowledgesRows = useMemo(() => {
-    const rows = []
-    if (collectionDetails) {
-      for (const [key, value] of Object.entries(
-        collectionDetails.knowledges ?? {}
-      )) {
-          rows.push({
-            id: key,
-            name: value.knowledge.name,
-          })
-      }
-    }
-
-    return rows
-  }, [collectionDetails])
-
   
   useEffect(() => {
     if (collectionsNames?.length) {
@@ -191,38 +172,10 @@ const Collections = () => {
                     onClick={() => setOpenDataSourceLinkForm(true)}
                   />
                 </div>
-                <div className="h-[calc(50%-4.125rem)]">
+                <div className="h-[calc(100%-4.125rem)]">
                   <DataSourcesTable
                     collectionName={selectedCollection}
                     rows={associatedDataSourcesRows}
-                    openRunsHistoryDrawer={openRunsHistoryDrawer}
-                  />
-                </div>
-                <div className="flex justify-between mb-3">
-                  <div>
-                    <div className="text-base font-medium mb-1">
-                      Knowledges for{' '}
-                      <Badge
-                        text={selectedCollection}
-                        type="white"
-                        textClasses="text-base"
-                      />{' '}
-                      collection
-                    </div>
-                  </div>
-                  <Button
-                    white
-                    icon={'plus'}
-                    iconClasses="text-gray-400"
-                    text={'Add Knowledge'}
-                    className="btn-sm text-sm bg-white"
-                    onClick={() => setOpenKnowledgeLinkForm(true)}
-                  />
-                </div>
-                <div className="h-[calc(50%-4.125rem)]">
-                  <KnowledgesTable
-                    collectionName={selectedCollection}
-                    rows={knowledgesRows}
                     openRunsHistoryDrawer={openRunsHistoryDrawer}
                   />
                 </div>
@@ -252,15 +205,6 @@ const Collections = () => {
           open={openDataSourceLinkForm}
           onClose={() => {
             setOpenDataSourceLinkForm(false)
-          }}
-          collectionName={selectedCollection}
-        />
-      )}
-      {selectedCollection && openKnowledgeLinkForm && (
-        <AddKnowledgeToCollection
-          open={openKnowledgeLinkForm}
-          onClose={() => {
-            setOpenKnowledgeLinkForm(false)
           }}
           collectionName={selectedCollection}
         />

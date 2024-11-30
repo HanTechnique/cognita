@@ -119,6 +119,7 @@ const DocsQA = () => {
   }, [openapiSpecs])
 
   const allRetrieverOptions = useMemo(() => {
+    const token = localStorage.getItem('idToken'); // Retrieve JWT from localStorage
     const queryControllerPath = `/retrievers/${selectedQueryController}/answer`
     const examples =
       openapiSpecs?.paths[queryControllerPath]?.post?.requestBody?.content?.[
@@ -186,6 +187,8 @@ const DocsQA = () => {
         }
         setIsRunningPrompt(false)
       } else {
+        const token = localStorage.getItem('idToken'); // Retrieve JWT from localStorage
+
         const sseRequest = new SSE(
           `${baseQAFoundryPath}/retrievers/${selectedQueryController}/answer`,
           {
@@ -195,6 +198,7 @@ const DocsQA = () => {
             }),
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '', // Conditional header
             },
           }
         )

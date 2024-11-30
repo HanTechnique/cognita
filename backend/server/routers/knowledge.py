@@ -143,12 +143,14 @@ async def associate_data_source_to_knowledge(
 @router.post("/unassociate_data_source")
 async def unassociate_data_source_from_knowledge(
     request: UnassociateDataSourceWithKnowledgeDto,
+    user: dict = Depends(get_current_user)
 ):
     """Remove a data source to the knowledge"""
     try:
         client = await get_client()
         client = KnowledgePrismaStore(client)
         knowledge = await client.aunassociate_data_source_with_knowledge(
+            user,
             knowledge_name=request.knowledge_name,
             data_source_fqn=request.data_source_fqn,
         )
@@ -162,7 +164,9 @@ async def unassociate_data_source_from_knowledge(
 
 @router.post("/ingest")
 async def ingest_data(
-    ingest_data_to_knowledge_dto: IngestDataToKnowledgeDto, request: Request
+    ingest_data_to_knowledge_dto: IngestDataToKnowledgeDto, 
+    request: Request,
+    user: dict = Depends(get_current_user)
 ):
     """Ingest data into the knowledge"""
     try:
@@ -171,7 +175,9 @@ async def ingest_data(
         process_pool = None
     try:
         return await ingest_data_to_knowledge(
-            ingest_data_to_knowledge_dto, pool=process_pool
+            ingest_data_to_knowledge_dto,
+            user, 
+            pool=process_pool
         )
     except HTTPException as exp:
         raise exp

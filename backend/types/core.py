@@ -111,6 +111,11 @@ class BaseCollection(ConfiguredBaseModel):
             "type": "embedding",
         },
     )
+    owner_id: Optional[str] = Field(
+        None,
+        title="a owner id for your collection",
+        example="This is a test collection",
+    )
 
 
 class BaseKnowledge(ConfiguredBaseModel):
@@ -128,16 +133,6 @@ class BaseKnowledge(ConfiguredBaseModel):
         title="a description for your knowledge",
         example="This is a test knowledge",
     )
-class KnowledgeOnCollection(BaseModel):
-    collectionId: int=Field(
-        title="Id associated with the knowledge", default_factory=dict
-    )
-    knowledgeId:  int=Field(
-        title="Id associated with the knowledge", default_factory=dict
-    )
-
-    collection: 'Collection'
-    knowledge:  'Knowledge'
 class Collection(BaseCollection):
     id: int  = Field(
         title="Id for the collection"
@@ -145,11 +140,6 @@ class Collection(BaseCollection):
 
     associated_data_sources: Dict[str, AssociatedDataSources] = Field(
         title="Data sources associated with the collection", default_factory=dict
-    )
-    knowledges: Optional[List[KnowledgeOnCollection]] = Field(
-        None,
-        title="a list of knowledges",
-        example="This is a list of knowledges",
     )
 
     @model_validator(mode="before")
@@ -172,10 +162,6 @@ class Knowledge(BaseKnowledge):
 
     associated_data_sources: Dict[str, AssociatedDataSources] = Field(
         title="Data sources associated with the knowledge", default_factory=dict
-    )
-
-    collections: Optional[List[KnowledgeOnCollection]] = Field(
-        title="Collections associated with the knowledge", default_factory=dict
     )
 
     @model_validator(mode="before")
@@ -249,7 +235,7 @@ class DataPointVector(ConfiguredBaseModel):
         data_point_hash (str): Hash of the data point for the given data source that is guaranteed to be updated for any update in data point at source
     """
 
-    data_point_vector_id: str = Field(
+    data_point_vector_id: Optional[str] = Field(
         title="Unique identifier for the data point with respect to the vector store",
     )
     data_point_fqn: str = Field(

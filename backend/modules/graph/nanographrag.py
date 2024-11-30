@@ -1,5 +1,6 @@
 from backend.modules.graph.base import GraphRAGDB
 from nano_graphrag import GraphRAG, QueryParam
+from nano_graphrag._llm import gpt_4o_mini_complete
 import os
 import shutil
 from backend.modules.graph.milvuslitestorage import MilvusLiteStorage
@@ -47,6 +48,9 @@ class NanoGraphRAG(GraphRAGDB):
 
         graph_func = GraphRAG(working_dir= self.config.config['working_dir']+"/"+knowledge_name,
             enable_llm_cache=True,
+            enable_naive_rag=True,
+            best_model_func=gpt_4o_mini_complete,
+            cheap_model_func=gpt_4o_mini_complete,
             vector_db_storage_cls=MilvusLiteStorage,)
 
         page_contents = [document.page_content for document in documents]
@@ -70,7 +74,10 @@ class NanoGraphRAG(GraphRAGDB):
 
     def get_graph_store(self, knowledge_name: str):
         graph_func = GraphRAG(working_dir= self.config.config['working_dir']+"/"+knowledge_name,
-            enable_llm_cache=True,
+            enable_llm_cache=True,            
+            enable_naive_rag=True,
+            best_model_func=gpt_4o_mini_complete,
+            cheap_model_func=gpt_4o_mini_complete,
             vector_db_storage_cls=MilvusLiteStorage,)
         return graph_func
 
@@ -90,17 +97,19 @@ class NanoGraphRAG(GraphRAGDB):
         nest_asyncio.apply()
 
         graph_func = GraphRAG(working_dir= self.config.config['working_dir']+"/"+knowledge_name,
-            enable_llm_cache=True,
+            enable_llm_cache=True,            
+            enable_naive_rag=True,        
+            best_model_func=gpt_4o_mini_complete,
+            cheap_model_func=gpt_4o_mini_complete,
             vector_db_storage_cls=MilvusLiteStorage,)
         
-        all_docs = graph_func.query("", param=QueryParam(mode="local", top_k=1000))
-
+        all_docs = graph_func.query("the", param=QueryParam(mode="naive"))
         data_point_vectors = []
-        for vector in all_docs:
+        for text in all_docs:
             data_point_vectors.append(
                 DataPointVector(
-                    data_point_vector_id=vector['id'],
-                    data_point_fqn=vector['text'],
+                    data_point_vector_id=None,
+                    data_point_fqn=text,
                     data_point_hash='not available' #TODO: get hash of text
                 )
             )

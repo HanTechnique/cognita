@@ -39,13 +39,15 @@ const DocsQAChatbot = () => {
         stream: true,
       }
       // Conditional logic for different retriever types
+      const token = localStorage.getItem('idToken'); // Retrieve JWT from localStorage
       const sseRequest = new SSE(`${baseQAFoundryPath}/retrievers/${applicationsData.config.query_controller}/answer`, {
         payload: JSON.stringify({
           ...params,
           stream: true
         }),
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '', // Conditional header
         },
       })
 

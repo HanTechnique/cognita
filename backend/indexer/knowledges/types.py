@@ -6,7 +6,6 @@ from backend.types.core import (
     ConfiguredBaseModel,
     DataIngestionMode,
     DataSource,
-    EmbedderConfig,
     ParserConfig,
 )
 
@@ -24,9 +23,6 @@ class KnowledgeDataIngestionConfig(ConfiguredBaseModel):
     )
     data_source: DataSource = Field(
         title="Data source to ingest data from. Can be local, github or truefoundry data-dir/artifact",
-    )
-    embedder_config: EmbedderConfig = Field(
-        title="Embedder configuration",
     )
     parser_config: Dict[str, ParserConfig] = Field(
         title="Parser configuration to parse the documents.",

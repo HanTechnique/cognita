@@ -52,9 +52,7 @@ class CollectionPrismaStore(PrismaStore):
             user_id = user['sub']  # Implement user authentication
             collection: Optional[
                 "PrismaCollection"
-            ] = await self.db.collection.find_first(where={"name": collection_name, "owner_id": user_id},
-                                                    include={"knowledges": {"include": {"knowledge": True,"collection": True}}}
-            )
+            ] = await self.db.collection.find_first(where={"name": collection_name, "owner_id": user_id})
             if collection:
                 return Collection.model_validate(collection.model_dump())
             return None

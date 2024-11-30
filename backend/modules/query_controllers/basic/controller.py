@@ -1,7 +1,11 @@
 from fastapi import Body, HTTPException
 from fastapi.responses import StreamingResponse
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_core.runnables import (
+    RunnableLambda,
+    RunnableMap,
+    RunnablePassthrough,
+)
 from fastapi import Depends
 from backend.server.auth import get_current_user
 from backend.logger import logger
@@ -13,6 +17,9 @@ from backend.modules.query_controllers.basic.payload import (
 )
 from backend.modules.query_controllers.basic.types import ExampleQueryInput
 from backend.server.decorators import post, query_controller
+from langchain_core.runnables import RunnableMap, RunnablePassthrough
+from langchain.retrievers import ContextualCompressionRetriever, MultiQueryRetriever
+from langchain.schema.vectorstore import VectorStoreRetriever
 
 EXAMPLES = {
     "vector-store-similarity": QUERY_WITH_VECTOR_STORE_RETRIEVER_PAYLOAD,
@@ -20,6 +27,7 @@ EXAMPLES = {
     "contextual-compression-multi-query-similarity": QUERY_WITH_CONTEXTUAL_COMPRESSION_MULTI_QUERY_RETRIEVER_SIMILARITY_PAYLOAD,
 }
 
+from typing import Dict, Any
 
 @query_controller("/basic-rag")
 class BasicRAGQueryController(BaseQueryController):
@@ -38,7 +46,7 @@ class BasicRAGQueryController(BaseQueryController):
             # Get the vector store
             vector_store = await self._get_vector_store(user, request.collection_name)
 
-            # Create the QA prompt templates
+            # Create the QA prompt template
             QA_PROMPT = self._get_prompt_template(
                 input_variables=["context", "question"],
                 template=request.prompt_template,
@@ -47,73 +55,64 @@ class BasicRAGQueryController(BaseQueryController):
             # Get the LLM
             llm = self._get_llm(request.model_configuration, request.stream)
 
-            # get retriever
+            print("About to get retriever...")  # New debug print
+            # Get retriever
             retriever = await self._get_retriever(
                 vector_store=vector_store,
                 retriever_name=request.retriever_name,
                 retriever_config=request.retriever_config,
             )
+            try:
+                retrieved_docs = await retriever.aget_relevant_documents(request.query)
+                print(retrieved_docs)
+            except Exception as e:
+                logger.error(f"Error retrieving documents: {e}")
+                raise
+            # Define process_and_extend_docs function
+            def process_and_extend_docs(inputs: Dict[str, Any]) -> Dict[str, Any]:
+                """Formats existing docs and appends knowledge documents."""
+                docs = inputs["context"]
+                formatted_docs = self._format_docs(docs)
+                #  Update prompt with formatted docs and original question
+                updated_prompt = QA_PROMPT.format(
+                    context=formatted_docs, question=inputs["question"]
+                )  # Pass formatted_docs to the prompt
 
-            # Using LCEL
-            rag_chain_from_docs = (
-                RunnablePassthrough.assign(
-                    # add internet search results to context
-                    context=(
-                        lambda x: self._format_docs(
-                            x["context"],
-                        )
-                    )
-                )
-                | QA_PROMPT
-                | llm
-                | StrOutputParser()
+                return {
+                    "prompt": updated_prompt, # Return the formatted prompt
+                }
+
+            # Update chain to pass a dictionary input
+            rag_chain = (RunnableMap(
+                    {"context": retriever, "question": RunnablePassthrough()}
+                ) | process_and_extend_docs | llm | StrOutputParser()
             )
 
-            rag_chain_with_source = RunnableParallel(
-                {"context": retriever, "question": RunnablePassthrough()}
-            )
 
+            # If internet search is enabled, modify the chain
             if request.internet_search_enabled:
-                rag_chain_with_source = (
-                    rag_chain_with_source | self._internet_search
-                ).assign(answer=rag_chain_from_docs)
-            else:
-                rag_chain_with_source = rag_chain_with_source.assign(
-                    answer=rag_chain_from_docs
-                )
+                # Define a function for internet search
+                def internet_search(inputs: Dict[str, Any]) -> Dict[str, Any]:
+                    return self._internet_search(inputs)
+
+                internet_search_runnable = RunnableLambda(internet_search)
+                rag_chain = rag_chain | internet_search_runnable
+
+            # Prepare the input
+            chain_input = {"question": request.query}
 
             if request.stream:
                 return StreamingResponse(
                     self._sse_wrap(
-                        self._stream_answer(rag_chain_with_source, request.query),
+                        self._stream_answer(rag_chain, chain_input),
                     ),
                     media_type="text/event-stream",
                 )
-
             else:
-                outputs = await rag_chain_with_source.ainvoke(request.query)
-
-                # Intermediate testing
-                # Just the retriever
-                # setup_and_retrieval = RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
-                # outputs = await setup_and_retrieval.ainvoke(request.query)
-                # print(outputs)
-
-                # Retriever, internet search
-                # outputs = await (setup_and_retrieval | self.internet_search).ainvoke(request.query)
-                # print(outputs)
-
-                # Retriever and QA
-                # outputs = await (setup_and_retrieval | QA_PROMPT).ainvoke(request.query)
-                # print(outputs)
-
-                # Retriever, QA and LLM
-                # outputs = await (setup_and_retrieval | QA_PROMPT | llm).ainvoke(request.query)
-                # print(outputs)
-
+                output = await rag_chain.ainvoke(chain_input)
                 return {
-                    "answer": outputs["answer"],
-                    "docs": outputs["context"] if outputs["context"] else [],
+                    "answer": output,
+                    "docs": [],  # Adjust if you want to return documents
                 }
 
         except HTTPException as exp:
@@ -121,43 +120,3 @@ class BasicRAGQueryController(BaseQueryController):
         except Exception as exp:
             logger.exception(exp)
             raise HTTPException(status_code=500, detail=str(exp))
-
-
-#######
-# Streaming Client
-
-# import httpx
-# from httpx import Timeout
-
-# from backend.modules.query_controllers.basic.types import ExampleQueryInput
-
-# payload = {
-#   "collection_name": "pstest",
-#   "query": "What are the features of Diners club black metal edition?",
-#   "model_configuration": {
-#     "name": "openai-devtest/gpt-3-5-turbo",
-#     "parameters": {
-#       "temperature": 0.1
-#     },
-#     "provider": "truefoundry"
-#   },
-#   "prompt_template": "Answer the question based only on the following context:\nContext: {context} \nQuestion: {question}",
-#   "retriever_name": "vectorstore",
-#   "retriever_config": {
-#     "search_type": "similarity",
-#     "search_kwargs": {
-#       "k": 20
-#     },
-#     "filter": {}
-#   },
-#   "stream": True
-# }
-
-# data = ExampleQueryInput(**payload).model_dump()
-# ENDPOINT_URL = 'http://localhost:8000/retrievers/example-app/answer'
-
-
-# with httpx.stream('POST', ENDPOINT_URL, json=data, timeout=Timeout(5.0*60)) as r:
-#     for chunk in r.iter_text():
-#         print(chunk)
-#######

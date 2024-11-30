@@ -146,12 +146,14 @@ async def associate_data_source_to_collection(
 @router.post("/unassociate_data_source")
 async def unassociate_data_source_from_collection(
     request: UnassociateDataSourceWithCollectionDto,
+    user: dict = Depends(get_current_user)
 ):
     """Remove a data source to the collection"""
     try:
         client = await get_client()
         client = CollectionPrismaStore(client)
         collection = await client.aunassociate_data_source_with_collection(
+            user,
             collection_name=request.collection_name,
             data_source_fqn=request.data_source_fqn,
         )
@@ -165,8 +167,10 @@ async def unassociate_data_source_from_collection(
 
 @router.post("/ingest")
 async def ingest_data(
-    ingest_data_to_collection_dto: IngestDataToCollectionDto, request: Request
-):
+    ingest_data_to_collection_dto: IngestDataToCollectionDto, 
+    request: Request,
+    user: dict = Depends(get_current_user)
+    ):
     """Ingest data into the collection"""
     try:
         process_pool = request.app.state.process_pool
@@ -174,7 +178,9 @@ async def ingest_data(
         process_pool = None
     try:
         return await ingest_data_to_collection(
-            ingest_data_to_collection_dto, pool=process_pool
+            ingest_data_to_collection_dto, 
+            user,
+            pool=process_pool
         )
     except HTTPException as exp:
         raise exp
@@ -235,59 +241,3 @@ async def get_collection_status(
             "message": f"Data ingestion job run {data_ingestion_run.name} in {data_ingestion_run.status.value}. Check logs for more details.",
         }
     )
-@router.post("/{collection_name}/knowledges/{knowledge_name}")
-async def associate_knowledge_with_collection_and_user(
-    collection_name: str, knowledge_name: str,
-    user: dict = Depends(get_current_user)
-):
-    client = await get_client()
-    client = CollectionPrismaStore(client)
-
-    try:
-        collection = await client.aget_collection_by_name_and_user(user, collection_name)
-        if not collection:
-            raise HTTPException(status_code=404, detail="Collection not found")
-        
-        knowledge = await client.aget_knowledge_by_name_and_user(knowledge_name, user) 
-        if not knowledge:
-            raise HTTPException(status_code=404, detail="Knowledge not found")
-        knowledge.collections = knowledge.collections or [] 
-
-        # Associate using Prisma
-        await client.db.knowledgeoncollection.create(
-            data={"collectionId": collection.id, "knowledgeId": knowledge.id}
-        )
-
-        return {"message": "Knowledge associated with collection successfully"}
-
-    except Exception as e:
-        logger.exception(f"Failed to associate knowledge with collection: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-@router.delete("/{collection_name}/knowledges/{knowledge_name}")
-async def unassociate_knowledge_with_collection(
-    collection_name: str, knowledge_name: str,
-    user: dict = Depends(get_current_user)
-):
-    client = await get_client()
-    client = CollectionPrismaStore(client)
-
-    try:
-        collection = await client.aget_collection_by_name_and_user(user, collection_name)
-        if not collection:
-            raise HTTPException(status_code=404, detail="Collection not found")
-        
-        knowledge = await client.aget_knowledge_by_name_by_user(knowledge_name, user) 
-        if not knowledge:
-            raise HTTPException(status_code=404, detail="Knowledge not found")
-        knowledge.collections = knowledge.collections or [] 
-
-        # Associate using Prisma
-        await client.db.knowledgeoncollection.delete(
-            data={"collectionId": collection.id, "knowledgeId": knowledge.id}
-        )
-
-        return {"message": "Knowledge associated with collection successfully"}
-
-    except Exception as e:
-        logger.exception(f"Failed to associate knowledge with collection: {e}")
-        raise HTTPException(status_code=500, detail=str(e))

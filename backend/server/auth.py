@@ -116,7 +116,7 @@ async def signup(user_data: CreateUserDto):
         # 5. Add the user to the newly created team (UserOnTeam association)
         await client.db.useronteam.create(
             data={
-                'user_id': new_user.id, 
+                'user_id': new_user.auth0_id, 
                 'team_id': new_team.id,
                 'joined_at': datetime.now(timezone.utc),  # Set joined_at to the current UTC time
                 'role': 'ADMIN', # Or another default role

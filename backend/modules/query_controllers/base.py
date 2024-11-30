@@ -10,6 +10,7 @@ from langchain.prompts import PromptTemplate
 from langchain.retrievers import ContextualCompressionRetriever, MultiQueryRetriever
 from langchain.schema.vectorstore import VectorStoreRetriever
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.runnables.base import AddableDict  # Imported AddableDict
 from pydantic import BaseModel
 from backend.modules.metadata_store.collections.prismastore import CollectionPrismaStore
 
@@ -43,17 +44,7 @@ class BaseQueryController:
         return PromptTemplate(input_variables=input_variables, template=template)
 
     def _format_docs(self, docs):
-        formatted_docs = list()
-        for doc in docs:
-            metadata = {
-                key: doc.metadata[key]
-                for key in self.required_metadata
-                if key in doc.metadata
-            }
-            formatted_docs.append(
-                {"page_content": doc.page_content, "metadata": metadata}
-            )
-        return "\n\n".join([f"{doc['page_content']}" for doc in formatted_docs])
+        return "\n\n".join([d.page_content for d in docs])
 
     def _get_llm(self, model_configuration: ModelConfig, stream=False) -> BaseChatModel:
         """
@@ -69,7 +60,7 @@ class BaseQueryController:
 
         client = await get_client()
         client = CollectionPrismaStore(client)
-        collection = await client.aget_retrieve_collection_by_name(collection_name)
+        collection = await client.aget_retrieve_collection_by_name_and_user(user, collection_name)
 
         if collection is None:
             raise HTTPException(status_code=404, detail="Collection not found")
@@ -87,15 +78,16 @@ class BaseQueryController:
                 model_name=collection.embedder_config.name
             ),
         )
+
     async def _get_knowledge_graphs(self, user: dict, collection_name: str):
         """
-        Get the knowledges for the collection
+        Get the knowledge graphs for the collection
         """
         user_id = user['sub']  # Implement user authentication
 
         client = await get_client()
         client = CollectionPrismaStore(client)
-        collection = await client.aget_retrieve_collection_by_name(collection_name)
+        collection = await client.aget_retrieve_collection_by_name_and_user(user, collection_name)
         if collection is None:
             raise HTTPException(status_code=404, detail="Collection not found")
 
@@ -109,10 +101,9 @@ class BaseQueryController:
         knowledge_graphs = {}
         for koc in collection.knowledges:
             knowledge_graph = GRAPHRAG_STORE_CLIENT.get_graph_store(
-                    knowledge_name=koc.knowledge.name,
-                )
-
-            knowledge_graphs[koc.knowledge.name]=knowledge_graph
+                knowledge_name=koc.knowledge.name,
+            )
+            knowledge_graphs[koc.knowledge.name] = knowledge_graph
         return knowledge_graphs
 
     def _get_vector_store_retriever(self, vector_store, retriever_config):
@@ -131,7 +122,7 @@ class BaseQueryController:
         """
         try:
             retriever = self._get_vector_store_retriever(vector_store, retriever_config)
-            logger.info("Using MxBaiRerankerSmall th' service...")
+            logger.info("Using MxBaiRerankerSmall service...")
 
             compressor = model_gateway.get_reranker_from_model_config(
                 model_name=retriever_config.compressor_model_name,
@@ -153,7 +144,7 @@ class BaseQueryController:
         self, vector_store, retriever_config, retriever_type="vectorstore"
     ):
         """
-        Get the multi query retriever
+        Get the multi-query retriever
         """
         if retriever_type == "vectorstore":
             base_retriever = self._get_vector_store_retriever(
@@ -187,13 +178,11 @@ class BaseQueryController:
             retriever = self._get_contextual_compression_retriever(
                 vector_store, retriever_config
             )
-
         elif retriever_name == "multi-query":
             logger.debug(
                 f"Using MultiQueryRetriever with {retriever_config.search_type} search"
             )
             retriever = self._get_multi_query_retriever(vector_store, retriever_config)
-
         elif retriever_name == "contextual-compression-multi-query":
             logger.debug(
                 f"Using MultiQueryRetriever with {retriever_config.search_type} search and "
@@ -202,13 +191,12 @@ class BaseQueryController:
             retriever = self._get_multi_query_retriever(
                 vector_store, retriever_config, retriever_type="contextual-compression"
             )
-
         else:
             raise HTTPException(status_code=404, detail="Retriever not found")
         return retriever
 
     def _cleanup_metadata(self, docs):
-        formatted_docs = list()
+        formatted_docs = []
         for doc in docs:
             metadata = {
                 key: doc.metadata[key]
@@ -250,12 +238,12 @@ class BaseQueryController:
         nest_asyncio.apply()
 
         logger.info("Using knowledge search...")
-        documents=[]
-        for knowledge_name,knowledge_graph in knowledge_graphs.items():
+        documents = []
+        for knowledge_name, knowledge_graph in knowledge_graphs.items():
             knowledge_response = knowledge_graph.query(query)
             document = Document(
                 page_content=knowledge_response,
-                metadata={"_data_point_fqn": "knowledge::"+knowledge_name},
+                metadata={"_data_point_fqn": "knowledge::" + knowledge_name},
             )
             documents.append(document)
         return documents
@@ -265,7 +253,7 @@ class BaseQueryController:
             logger.info("Using Internet search...")
             data_context, question = context["context"], context["question"]
             intent_summary_results = self._intent_summary_search(question)
-            # insert internet search results into context at the beginning
+            # Insert internet search results into context at the beginning
             data_context.insert(
                 0,
                 Document(
@@ -283,9 +271,18 @@ class BaseQueryController:
         yield "event:documents end\n"
 
     async def _stream_answer(self, rag_chain, query) -> AsyncIterator[BaseModel]:
+        # Ensure query is a string
+        if isinstance(query, dict):
+            query_string = query.get('question') or query.get('input') or query.get('text')
+        else:
+            query_string = query
+
+        # Prepare the input for the chain
+        chain_input = {"question": query_string}
+
         async with async_timeout.timeout(GENERATION_TIMEOUT_SEC):
             try:
-                async for chunk in rag_chain.astream(query):
+                async for chunk in rag_chain.astream(chain_input):
                     if "context" in chunk:
                         yield Docs(content=self._cleanup_metadata(chunk["context"]))
                     elif "answer" in chunk:

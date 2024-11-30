@@ -211,9 +211,6 @@ async def ingest_data_points(
         None
 
     """
-    embeddings = model_gateway.get_embedder_from_model_config(
-        model_name=inputs.embedder_config.name
-    )
     documents_to_be_upserted = []
     logger.info(
         f"Processing {len(loaded_data_points)} new documents and completed: {documents_ingested_count}"
@@ -340,7 +337,6 @@ async def ingest_data(
                 data_ingestion_run = CreateKnowledgeDataIngestionRun(
                     knowledge_name=knowledge.name,
                     data_source_fqn=associated_data_source.data_source_fqn,
-                    embedder_config=knowledge.embedder_config,
                     parser_config=associated_data_source.parser_config,
                     data_ingestion_mode=request.data_ingestion_mode,
                     raise_error_on_failure=request.raise_error_on_failure,
@@ -352,7 +348,6 @@ async def ingest_data(
                     knowledge_name=created_data_ingestion_run.knowledge_name,
                     data_ingestion_run_name=created_data_ingestion_run.name,
                     data_source=associated_data_source.data_source,
-                    embedder_config=knowledge.embedder_config,
                     parser_config=created_data_ingestion_run.parser_config,
                     data_ingestion_mode=created_data_ingestion_run.data_ingestion_mode,
                     raise_error_on_failure=created_data_ingestion_run.raise_error_on_failure,

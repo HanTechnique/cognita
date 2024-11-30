@@ -113,11 +113,18 @@ export const qafoundryCollectionsApi = createApi({
       QueryAnswer,
       CollectionQueryDto & { queryController: string }
     >({
-      query: (payload) => ({
-        url: `/retrievers/${payload.queryController}/answer`,
-        body: payload,
-        method: 'POST',
-      }),
+      query: (payload) => {
+        const token = localStorage.getItem('idToken'); // Retrieve JWT from localStorage
+
+        return {
+          url: `/retrievers/${payload.queryController}/answer`,
+          body: payload,
+          method: 'POST',
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined, // Conditional header
+          },
+        };
+      },
     }),
 
     createCollection: builder.mutation({
@@ -188,29 +195,6 @@ export const qafoundryCollectionsApi = createApi({
             ),
       }),
     }),
-    ingestKnowledge: builder.mutation({
-      query: (payload: {
-        collection_name: string
-        knowledge_name: string
-        data_ingestion_mode: string
-        raise_error_on_failure: boolean
-        run_as_job: boolean
-      }) => ({
-        url: `/v1/collections/${payload.collection_name}/knowledges/${payload.knowledge_name}/ingest`,
-        body: payload,
-        method: 'POST',
-      }),
-      invalidatesTags: ['CollectionDetails'],
-    }),
-
-    unassociateKnowledge: builder.mutation({
-      query: (payload: { collection_name: string; knowledge_name: string }) => ({
-        url: `/v1/collections/${payload.collection_name}/knowledges/${payload.knowledge_name}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['CollectionDetails'],
-    }),
-
   }),
 })
 
@@ -231,6 +215,4 @@ export const {
   useDeleteCollectionMutation,
   useIngestDataSourceMutation,
   useAssociateKnowledgeMutation,  
-  useIngestKnowledgeMutation,
-  useUnassociateKnowledgeMutation,
 } = qafoundryCollectionsApi
