@@ -15,7 +15,7 @@ from backend.modules.query_controllers.basic.payload import (
     QUERY_WITH_CONTEXTUAL_COMPRESSION_RETRIEVER_PAYLOAD,
     QUERY_WITH_VECTOR_STORE_RETRIEVER_PAYLOAD,
 )
-from backend.modules.query_controllers.basic.types import ExampleQueryInput
+from backend.modules.query_controllers.basic.types import BasicQueryInput
 from backend.server.decorators import post, query_controller
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain.retrievers import ContextualCompressionRetriever, MultiQueryRetriever
@@ -35,7 +35,7 @@ class BasicRAGQueryController(BaseQueryController):
     async def answer(
         self,
         user: dict = Depends(get_current_user),
-        request: ExampleQueryInput = Body(
+        request: BasicQueryInput = Body(
             openapi_examples=EXAMPLES,
         ),
     ):

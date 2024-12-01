@@ -97,6 +97,15 @@ const Knowledges = () => {
     <>
       <div className='flex justify-between'>
         <div className='text-[24px] font-bold font-inter'>Knowledges</div>
+        <a href={`/dashboard?knowledge=${selectedKnowledge}`}>
+                    <Button
+                      white
+                      icon={'plus'}
+                      iconClasses="text-gray-400"
+                      text={'Add Application for this knowledge'}
+                      className="btn-sm text-sm bg-white mr-2" // Add margin-right
+                    />
+                  </a>
         <LinkButton
           icon="plus"
           iconClasses="fa-xs text-slate-400"

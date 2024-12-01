@@ -1,14 +1,9 @@
 import { ModelConfig, EmbedderConfig, AssociatedDataSource, DataIngestionRun, SourceDocs, AssociatedKnowledge } from '../index'
 import { createApi } from '@reduxjs/toolkit/query/react'
-
+import { QueryAnswer} from '../index'
 // import * as T from './types'
 import { createBaseQuery } from '../../utils'
 
-
-export interface QueryAnswer {
-  answer: string
-  docs: SourceDocs[]
-}
 
 export interface CollectionQueryDto {
     collection_name: string
@@ -24,6 +19,7 @@ export interface CollectionQueryDto {
     model_configuration: ModelConfig
     stream?: boolean
     queryController?: string
+    internet_search_enabled: boolean
 }
   
 export interface Collection {

@@ -15,6 +15,11 @@ import {
   useGetCollectionNamesQuery,
   useQueryCollectionMutation,
 } from '@/stores/qafoundry/collections/index'
+import {
+  KnowledgeQueryDto,
+  useGetKnowledgeNamesQuery,
+  useQueryKnowledgeMutation,
+} from '@/stores/qafoundry/knowledges/index'
 import { MenuItem, Select, Switch, TextareaAutosize } from '@mui/material'
 import React, { useEffect, useMemo, useState } from 'react'
 import NoCollections from './Collections/NoCollections'
@@ -24,6 +29,7 @@ import Modal from '@/components/base/atoms/Modal'
 import notify from '@/components/base/molecules/Notify'
 import { SSE } from 'sse.js'
 import { LightTooltip } from '@/components/base/atoms/Tooltip'
+import { RadioGroup, FormControlLabel, Radio } from '@mui/material'; // Import Radio components
 
 const defaultRetrieverConfig = `{
   "search_type": "similarity",
@@ -75,8 +81,10 @@ const ExpandableText = ({
 }
 
 const DocsQA = () => {
+  const [selectionType, setSelectionType] = useState('collection'); // Default to 'collection'
   const [selectedQueryModel, setSelectedQueryModel] = React.useState('')
   const [selectedCollection, setSelectedCollection] = useState('')
+  const [selectedKnowledge, setSelectedKnowledge] = useState('')
   const [selectedQueryController, setSelectedQueryController] = useState('')
   const [selectedRetriever, setSelectedRetriever] = useState<
     SelectedRetrieverType | undefined
@@ -101,6 +109,8 @@ const DocsQA = () => {
 
   const { data: collections, isLoading: isCollectionsLoading } =
     useGetCollectionNamesQuery()
+  const { data: knowledges, isLoading: isKnowledgesLoading } =
+    useGetKnowledgeNamesQuery()
   const { data: allEnabledModels } = useGetAllEnabledChatModelsQuery()
   const { data: openapiSpecs } = useGetOpenapiSpecsQuery()
   const [searchAnswer] = useQueryCollectionMutation()
@@ -117,6 +127,16 @@ const DocsQA = () => {
         return parts[2]
       })
   }, [openapiSpecs])
+
+  useEffect(() => {
+    if (selectionType === 'collection') {
+      setIsStreamEnabled(true);
+      setSelectedKnowledge(''); // Clear knowledge when collection is selected
+    } else if (selectionType === 'knowledge') {
+      setIsStreamEnabled(false);
+      setSelectedCollection(''); // Clear collection when knowledge is selected
+    }
+  }, [selectionType]);
 
   const allRetrieverOptions = useMemo(() => {
     const token = localStorage.getItem('idToken'); // Retrieve JWT from localStorage
@@ -136,93 +156,94 @@ const DocsQA = () => {
   }, [selectedQueryController, openapiSpecs])
 
   const handlePromptSubmit = async () => {
-    setIsRunningPrompt(true)
-    setAnswer('')
-    setSourceDocs([])
-    setErrorMessage(false)
+    setIsRunningPrompt(true);
+    setAnswer('');
+    setSourceDocs([]);
+    setErrorMessage(false);
+  
     try {
       const selectedModel = allEnabledModels.find(
-        (model: any) => model.name == selectedQueryModel
-      )
+        (model) => model.name === selectedQueryModel
+      );
       if (!selectedModel) {
-        throw new Error('Model not found')
+        throw new Error('Model not found');
       }
-      try {
-        JSON.parse(modelConfig)
-      } catch (err: any) {
-        throw new Error('Invalid Model Configuration')
-      }
-      try {
-        JSON.parse(retrieverConfig)
-      } catch (err: any) {
-        throw new Error('Invalid Retriever Configuration')
-      }
-      const params: CollectionQueryDto = Object.assign(
-        {
-          collection_name: selectedCollection,
-          query: prompt,
-          model_configuration: {
-            name: selectedModel.name,
-            provider: selectedModel.provider,
-            ...JSON.parse(modelConfig),
-          },
-          retriever_name: selectedRetriever?.name ?? '',
-          retriever_config: JSON.parse(retrieverConfig),
-          prompt_template: promptTemplate,
-          internet_search_enabled: isInternetSearchEnabled,
+  
+      const queryController = selectionType === 'collection'
+        ? selectedQueryController
+        : 'graph-rag'; // Default for knowledge
+  
+      const params: CollectionQueryDto = {
+        ...(selectionType === 'collection'
+          ? { collection_name: selectedCollection }
+          : { knowledge_name: selectedKnowledge }),
+        query: prompt,
+        model_configuration: {
+          name: selectedModel.name,
+          provider: selectedModel.provider,
+          ...JSON.parse(modelConfig),
         },
-        {}
-      )
+        retriever_name: selectedRetriever?.name || '',
+        retriever_config: JSON.parse(retrieverConfig),
+        prompt_template: promptTemplate,
+        internet_search_enabled: isInternetSearchEnabled,
+      };
+  
+      console.log('Selected Query Controller:', queryController);
+  
       if (!isStreamEnabled) {
         const res: any = await searchAnswer({
           ...params,
           stream: false,
-          queryController: selectedQueryController,
-        })
+          queryController,
+        });
         if (res?.error) {
-          setErrorMessage(true)
+          setErrorMessage(true);
         } else {
-          setAnswer(res.data.answer)
-          setSourceDocs(res.data.docs ?? [])
+          setAnswer(res.data.answer || 'No answer available.');
+          setSourceDocs(res.data.docs || []);
         }
-        setIsRunningPrompt(false)
       } else {
-        const token = localStorage.getItem('idToken'); // Retrieve JWT from localStorage
-
+        const token = localStorage.getItem('idToken');
         const sseRequest = new SSE(
-          `${baseQAFoundryPath}/retrievers/${selectedQueryController}/answer`,
+          `${baseQAFoundryPath}/retrievers/${queryController}/answer`,
           {
-            payload: JSON.stringify({
-              ...params,
-              stream: true,
-            }),
+            payload: JSON.stringify({ ...params, stream: true }),
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': token ? `Bearer ${token}` : '', // Conditional header
+              Authorization: token ? `Bearer ${token}` : '',
             },
           }
-        )
-
+        );
+  
         sseRequest.addEventListener('data', (event: any) => {
           try {
-            const parsed = JSON.parse(event.data)
+            const parsed = JSON.parse(event.data);
             if (parsed?.type === 'answer') {
-              setAnswer((prevAnswer) => prevAnswer + parsed.content)
-              setIsRunningPrompt(false)
+              setAnswer((prevAnswer) => prevAnswer + parsed.content);
             } else if (parsed?.type === 'docs') {
-              setSourceDocs((prevDocs) => [...prevDocs, ...parsed.content])
+              setSourceDocs((prevDocs) => [...prevDocs, ...parsed.content]);
             }
-          } catch (err) {}
-        })
-
-        sseRequest.addEventListener('end', (event: any) => {
-          sseRequest.close()
-        })
+          } catch (err) {
+            console.error('Error parsing SSE data:', err);
+          }
+        });
+  
+        sseRequest.addEventListener('end', () => {
+          sseRequest.close();
+          setIsRunningPrompt(false);
+        });
+  
+        sseRequest.stream();
       }
-    } catch (err: any) {
-      setErrorMessage(true)
+    } catch (err) {
+      console.error('Error submitting prompt:', err);
+      setErrorMessage(true);
+    } finally {
+      setIsRunningPrompt(false);
     }
-  }
+  };
+  
 
   const createChatApplication = async () => {
     if (!applicationName) {
@@ -233,22 +254,38 @@ const DocsQA = () => {
     )
 
     try {
-      await createApplication({
-        name: `${applicationName}-rag-app`,
-        config: {
-          collection_name: selectedCollection,
-          model_configuration: {
-            name: selectedModel.name,
-            provider: selectedModel.provider,
-            ...JSON.parse(modelConfig),
+      if (selectedCollection){
+        await createApplication({
+          name: `${applicationName}-rag-app`,
+          config: {
+            collection_name: selectedCollection,
+            knowledge_name: "",
+            model_configuration: {
+              name: selectedModel.name,
+              provider: selectedModel.provider,
+              ...JSON.parse(modelConfig),
+            },
+            retriever_name: selectedRetriever?.name ?? '',
+            retriever_config: JSON.parse(retrieverConfig),
+            prompt_template: promptTemplate,
+            query_controller: selectedQueryController,
+            stream:isStreamEnabled
           },
-          retriever_name: selectedRetriever?.name ?? '',
-          retriever_config: JSON.parse(retrieverConfig),
-          prompt_template: promptTemplate,
-          query_controller: selectedQueryController,
-        },
-        questions,
-      }).unwrap()
+          questions,
+        }).unwrap()
+      }
+      else{
+        await createApplication({
+          name: `${applicationName}-rag-app`,
+          config: {
+            collection_name: "",
+            knowledge_name: selectedKnowledge,
+            query_controller: "graph-rag",
+            stream: false
+          },
+          questions,
+        }).unwrap()
+      }
       setApplicationName('')
       setIsCreateApplicationModalOpen(false)
       notify('success', 'Application created successfully')
@@ -271,6 +308,17 @@ const DocsQA = () => {
       setSelectedCollection(collectionFromUrl);
     } else if (collections && collections.length) {
       setSelectedCollection(collections[0]);
+    }
+  }, [collections])
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const knowledgeFromUrl = urlParams.get('knowledge');
+
+    if (knowledgeFromUrl && knowledges?.includes(knowledgeFromUrl)) {
+      setSelectedKnowledge(knowledgeFromUrl);
+    } else if (knowledges && knowledges.length) {
+      setSelectedKnowledge(knowledges[0]);
     }
   }, [collections])
 
@@ -400,20 +448,38 @@ const DocsQA = () => {
         </Modal>
       )}
       <div className="flex gap-5 h-[calc(100vh-6.5rem)] w-full">
-        {isCollectionsLoading ? (
-          <div className="h-full w-full flex items-center">
-            <Spinner center big />
+        {/* 2. Add a toggle for selection */}
+        <div className="h-full border rounded-lg border-[#CEE0F8] w-[23.75rem] bg-white p-4 overflow-auto">
+          <div className="mb-4">
+            <div className="text-sm font-medium mb-2">Select Type:</div>
+            <RadioGroup
+              row
+              value={selectionType}
+              onChange={(e) => setSelectionType(e.target.value)}
+            >
+              <FormControlLabel
+                value="collection"
+                control={<Radio />}
+                label="Collection"
+              />
+              <FormControlLabel
+                value="knowledge"
+                control={<Radio />}
+                label="Knowledge"
+              />
+            </RadioGroup>
           </div>
-        ) : selectedCollection ? (
-          <>
-            <div className="h-full border rounded-lg border-[#CEE0F8] w-[23.75rem] bg-white p-4 overflow-auto">
+
+          {/* 4. Update rendering logic */}
+          {selectionType === 'collection' && (
+            <>
               <div className="flex justify-between items-center mb-1">
                 <div className="text-sm">Collection:</div>
                 <Select
                   value={selectedCollection}
                   onChange={(e) => {
-                    resetQA()
-                    setSelectedCollection(e.target.value)
+                    resetQA();
+                    setSelectedCollection(e.target.value);
                   }}
                   placeholder="Select Collection..."
                   sx={{
@@ -427,7 +493,7 @@ const DocsQA = () => {
                     },
                   }}
                 >
-                  {collections?.map((collection: any) => (
+                  {collections?.map((collection) => (
                     <MenuItem value={collection} key={collection}>
                       {collection}
                     </MenuItem>
@@ -456,32 +522,6 @@ const DocsQA = () => {
                   {allQueryControllers?.map((retriever: any) => (
                     <MenuItem value={retriever} key={retriever}>
                       {retriever}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </div>
-              <div className="flex justify-between items-center mb-1 mt-3">
-                <div className="text-sm">Model:</div>
-                <Select
-                  value={selectedQueryModel}
-                  onChange={(e) => {
-                    setSelectedQueryModel(e.target.value)
-                  }}
-                  placeholder="Select Model..."
-                  sx={{
-                    background: 'white',
-                    height: '2rem',
-                    width: '13.1875rem',
-                    border: '1px solid #CEE0F8 !important',
-                    outline: 'none !important',
-                    '& fieldset': {
-                      border: 'none !important',
-                    },
-                  }}
-                >
-                  {allEnabledModels?.map((model: any) => (
-                    <MenuItem value={model.name} key={model.name}>
-                      {model.name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -559,120 +599,162 @@ const DocsQA = () => {
                 value={promptTemplate}
                 onChange={(e) => setPromptTemplate(e.target.value)}
               />
-              <Button
-                text="Create Application"
-                className="w-full btn-sm mt-4"
-                onClick={() => setIsCreateApplicationModalOpen(true)}
-              />
-            </div>
-            <div className="h-full border rounded-lg border-[#CEE0F8] w-[calc(100%-25rem)] bg-white p-4">
-              <div className="flex gap-4 items-center">
-                <form className="w-full relative" onSubmit={(e) => e.preventDefault()}>
-                  <Input
-                    className="w-full min-h-[2.75rem] text-sm pr-14"
-                    placeholder="Ask any question related to this document"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                  />
-                  <Button
-                    icon="paper-plane-top"
-                    className="btn-sm absolute right-2 top-[0.375rem]"
-                    onClick={handlePromptSubmit}
-                    loading={isRunningPrompt}
-                    disabled={!prompt || !selectedQueryModel}
-                  />
-                </form>
+            </>
+          )}
+
+          {selectionType === 'knowledge' && (
+            <>
+              <div className="flex justify-between items-center mb-1">
+                <div className="text-sm">Knowledge:</div>
+                <Select
+                  value={selectedKnowledge}
+                  onChange={(e) => {
+                    resetQA();
+                    setSelectedKnowledge(e.target.value);
+                  }}
+                  placeholder="Select Knowledge..."
+                  sx={{
+                    background: 'white',
+                    height: '2rem',
+                    width: '13.1875rem',
+                    border: '1px solid #CEE0F8 !important',
+                    outline: 'none !important',
+                    '& fieldset': {
+                      border: 'none !important',
+                    },
+                  }}
+                >
+                  {knowledges?.map((knowledge) => (
+                    <MenuItem value={knowledge} key={knowledge}>
+                      {knowledge}
+                    </MenuItem>
+                  ))}
+                </Select>
               </div>
-              {answer ? (
-                <div className="overflow-y-auto flex flex-col gap-4 mt-7 h-[calc(100%-70px)]">
-                  <div className="max-h-[60%] h-full overflow-y-auto flex gap-4">
-                    <div className="bg-indigo-400 w-6 h-6 rounded-full flex items-center justify-center mt-0.5">
-                      <IconProvider icon="message" className="text-white" />
-                    </div>
-                    <div className="w-full font-inter text-base">
-                      <div className="font-bold text-lg">Answer:</div>
-                      <Markdown>{answer}</Markdown>
-                    </div>
-                  </div>
-                  {sourceDocs && (
-                    <div className="bg-gray-100 rounded-md w-full p-4 py-3 h-full overflow-y-auto border border-blue-500">
-                      <div className="font-semibold mb-3.5">
-                        Source Documents:
-                      </div>
-                      {sourceDocs?.map((doc, index) => {
-                        const splittedFqn =
-                          doc?.metadata?._data_point_fqn.split('::')
-                        const pageNumber =
-                          doc?.metadata?.page_number || doc?.metadata?.page_num
-                        const relevanceScore = doc?.metadata?.relevance_score
-                        return (
-                          <div key={index} className="mb-3">
-                            <div className="text-sm">
-                              {index + 1}.{' '}
-                              <ExpandableText
-                                text={doc.page_content}
-                                maxLength={250}
-                              />
-                            </div>
-                            {relevanceScore && (
-                              <div className="text-sm text-indigo-600 mt-1">
-                                Relevance Score: {relevanceScore}
-                              </div>
-                            )}
-                            <div className="text-sm text-indigo-600 mt-1">
-                              Source: {splittedFqn?.[splittedFqn.length - 1]}
-                              {pageNumber && `, Page No.: ${pageNumber}`}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              ) : isRunningPrompt ? (
-                <div className="overflow-y-auto flex flex-col justify-center items-center gap-2 h-[calc(100%-4.375rem)]">
-                  <div>
-                    <Spinner center medium />
-                  </div>
-                  <div className="text-center">Fetching Answer...</div>
-                </div>
-              ) : errorMessage ? (
-                <div className="overflow-y-auto flex gap-4 mt-7">
-                  <div className="bg-error w-6 h-6 rounded-full flex items-center justify-center mt-0.5">
+              <div className="flex justify-between items-center mt-1.5">
+                <div className="text-sm">Stream</div>
+                <Switch
+                  checked={false}
+                  disabled={true}
+                />
+              </div>
+
+              {/* ... [Include other knowledge-related settings here] */}
+            </>
+          )}
+          <Button
+            text="Create Application"
+            className="w-full btn-sm mt-4"
+            onClick={() => setIsCreateApplicationModalOpen(true)}
+          />
+        </div>
+        <div className="h-full border rounded-lg border-[#CEE0F8] w-[calc(100%-25rem)] bg-white p-4">
+            <div className="flex gap-4 items-center">
+              <form className="w-full relative" onSubmit={(e) => e.preventDefault()}>
+                <Input
+                  className="w-full min-h-[2.75rem] text-sm pr-14"
+                  placeholder="Ask any question related to this document"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                />
+                <Button
+                  icon="paper-plane-top"
+                  className="btn-sm absolute right-2 top-[0.375rem]"
+                  onClick={handlePromptSubmit}
+                  loading={isRunningPrompt}
+                  disabled={!prompt || !selectedQueryModel}
+                />
+              </form>
+            </div>
+            {answer ? (
+              <div className="overflow-y-auto flex flex-col gap-4 mt-7 h-[calc(100%-70px)]">
+                <div className="max-h-[60%] h-full overflow-y-auto flex gap-4">
+                  <div className="bg-indigo-400 w-6 h-6 rounded-full flex items-center justify-center mt-0.5">
                     <IconProvider icon="message" className="text-white" />
                   </div>
-                  <div className="w-full font-inter text-base text-error">
-                    <div className="font-bold text-lg">Error</div>
-                    We failed to get answer for your query, please try again by
-                    resending query or try again in some time.
+                  <div className="w-full font-inter text-base">
+                    <div className="font-bold text-lg">Answer:</div>
+                    <Markdown>{answer}</Markdown>
                   </div>
                 </div>
-              ) : (
-                <div className="h-[calc(100%-3.125rem)] flex justify-center items-center overflow-y-auto">
-                  <div className="min-h-[23rem]">
-                    <DocsQaInformation
-                      header={'Welcome to DocsQA'}
-                      subHeader={
-                        <>
-                          <p className="text-center max-w-[28.125rem] mt-2">
-                            Select a collection from sidebar,
-                            <br /> review all the settings and start asking
-                            Questions
-                          </p>
-                        </>
-                      }
-                    />
+                {sourceDocs && (
+                  <div className="bg-gray-100 rounded-md w-full p-4 py-3 h-full overflow-y-auto border border-blue-500">
+                    <div className="font-semibold mb-3.5">
+                      Source Documents:
+                    </div>
+                    {sourceDocs?.map((doc, index) => {
+                      const splittedFqn =
+                        doc?.metadata?._data_point_fqn.split('::')
+                      const pageNumber =
+                        doc?.metadata?.page_number || doc?.metadata?.page_num
+                      const relevanceScore = doc?.metadata?.relevance_score
+                      return (
+                        <div key={index} className="mb-3">
+                          <div className="text-sm">
+                            {index + 1}.{' '}
+                            <ExpandableText
+                              text={doc.page_content}
+                              maxLength={250}
+                            />
+                          </div>
+                          {relevanceScore && (
+                            <div className="text-sm text-indigo-600 mt-1">
+                              Relevance Score: {relevanceScore}
+                            </div>
+                          )}
+                          <div className="text-sm text-indigo-600 mt-1">
+                            Source: {splittedFqn?.[splittedFqn.length - 1]}
+                            {pageNumber && `, Page No.: ${pageNumber}`}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
+                )}
+              </div>
+            ) : isRunningPrompt ? (
+              <div className="overflow-y-auto flex flex-col justify-center items-center gap-2 h-[calc(100%-4.375rem)]">
+                <div>
+                  <Spinner center medium />
                 </div>
-              )}
-            </div>
-          </>
-        ) : (
+                <div className="text-center">Fetching Answer...</div>
+              </div>
+            ) : errorMessage ? (
+              <div className="overflow-y-auto flex gap-4 mt-7">
+                <div className="bg-error w-6 h-6 rounded-full flex items-center justify-center mt-0.5">
+                  <IconProvider icon="message" className="text-white" />
+                </div>
+                <div className="w-full font-inter text-base text-error">
+                  <div className="font-bold text-lg">Error</div>
+                  We failed to get answer for your query, please try again by
+                  resending query or try again in some time.
+                </div>
+              </div>
+            ) : (
+              <div className="h-[calc(100%-3.125rem)] flex justify-center items-center overflow-y-auto">
+                <div className="min-h-[23rem]">
+                  <DocsQaInformation
+                    header={'Welcome to DocsQA'}
+                    subHeader={
+                      <>
+                        <p className="text-center max-w-[28.125rem] mt-2">
+                          Select a collection from sidebar,
+                          <br /> review all the settings and start asking
+                          Questions
+                        </p>
+                      </>
+                    }
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          {(!selectedKnowledge || !selectedCollection) && (
           <NoCollections fullWidth />
-        )}
+          )}
       </div>
     </>
-  )
-}
+  );
+};
 
-export default DocsQA
+export default DocsQA;

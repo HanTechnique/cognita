@@ -18,7 +18,7 @@ const NoCollections = ({ fullWidth }: { fullWidth?: boolean }) => {
           <>
             <p className="text-center max-w-[28.125rem] mt-2">
               Start building a QnA system on your internal knowledge
-              <br /> base. Click “New Collection” button to connect your data
+              <br /> base. Click “New Collection” button or “New Knowledge” button to connect your data
               <br /> and start a chat
             </p>
             <Button
@@ -27,6 +27,13 @@ const NoCollections = ({ fullWidth }: { fullWidth?: boolean }) => {
               icon={'plus'}
               iconClasses="text-gray-400"
               onClick={() => navigate('/collections?newCollectionOpen=true')}
+            />
+            <Button
+              className="btn-sm text-sm mt-4 bg-black"
+              text={'New Knowledge'}
+              icon={'plus'}
+              iconClasses="text-gray-400"
+              onClick={() => navigate('/knowledges?newKnowledgeOpen=true')}
             />
           </>
         }

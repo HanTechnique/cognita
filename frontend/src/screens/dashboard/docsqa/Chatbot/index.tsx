@@ -29,45 +29,79 @@ const DocsQAChatbot = () => {
   })
 
   const handlePromptSubmit = async () => {
-    setIsRunningPrompt(true)
-    setAnswer('')
-    setErrorMessage(false)
+    setIsRunningPrompt(true);
+    setAnswer('');
+    setErrorMessage(false);
+  
     try {
       const params: CollectionQueryDto = {
         ...applicationsData.config,
         query: prompt,
-        stream: true,
-      }
-      // Conditional logic for different retriever types
+        stream: applicationsData.config.query_controller !== 'graph-rag',
+      };
+  
       const token = localStorage.getItem('idToken'); // Retrieve JWT from localStorage
-      const sseRequest = new SSE(`${baseQAFoundryPath}/retrievers/${applicationsData.config.query_controller}/answer`, {
-        payload: JSON.stringify({
-          ...params,
-          stream: true
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '', // Conditional header
-        },
-      })
-
-      sseRequest.addEventListener('data', (event: any) => {
-        try {
-          const parsed = JSON.parse(event.data)
-          if (parsed?.type === "answer") {
-            setAnswer((prevAnswer) => prevAnswer + parsed.content)
-            setIsRunningPrompt(false)
+  
+      if (applicationsData.config.query_controller === 'graph-rag') {
+        // Non-streaming request
+        const response = await fetch(
+          `${baseQAFoundryPath}/retrievers/${applicationsData.config.query_controller}/answer`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: token ? `Bearer ${token}` : '',
+            },
+            body: JSON.stringify(params),
           }
-        } catch (err) {}
-      })
-
-      sseRequest.addEventListener('end', (event: any) => {
-        sseRequest.close()
-      })
-    } catch (err: any) {
-      setErrorMessage(true)
+        );
+  
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+  
+        const data = await response.json();
+  
+        setAnswer(data.answer || 'No answer available.');
+      } else {
+        // Streaming request
+        const sseRequest = new SSE(
+          `${baseQAFoundryPath}/retrievers/${applicationsData.config.query_controller}/answer`,
+          {
+            payload: JSON.stringify(params),
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+  
+        sseRequest.addEventListener('data', (event: any) => {
+          try {
+            const parsed = JSON.parse(event.data);
+            if (parsed?.type === 'answer') {
+              setAnswer((prevAnswer) => prevAnswer + parsed.content);
+            }
+          } catch (err) {
+            console.error('Error parsing SSE event:', err);
+          }
+        });
+  
+        sseRequest.addEventListener('end', () => {
+          sseRequest.close();
+          setIsRunningPrompt(false); // Stop the spinner when the stream ends
+        });
+  
+        sseRequest.stream();
+      }
+    } catch (err) {
+      console.error('Error fetching answer:', err);
+      setErrorMessage(true);
+    } finally {
+      setIsRunningPrompt(false); // Stop the spinner in all scenarios
     }
-  }
+  };
+  
 
   return (
     <>

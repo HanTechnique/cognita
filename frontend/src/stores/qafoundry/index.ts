@@ -9,6 +9,11 @@ export enum ModelType {
   reranking = 'reranking',
 }
 
+export interface QueryAnswer {
+  answer: string
+  docs: SourceDocs[]
+}
+
 export interface ModelConfig {
   name: string
   type?: ModelType

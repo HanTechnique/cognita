@@ -97,7 +97,7 @@ const Collections = () => {
     <>
       <div className='flex justify-between'>
         <div className='text-[24px] font-bold font-inter'>Collections</div>        
-        <a href={`/?collection=${selectedCollection}`}>
+        <a href={`/dashboard?collection=${selectedCollection}`}>
                     <Button
                       white
                       icon={'plus'}

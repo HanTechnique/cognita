@@ -1,5 +1,6 @@
 import { ModelConfig, EmbedderConfig, AssociatedDataSource, DataIngestionRun  } from '../index'
 import { createApi } from '@reduxjs/toolkit/query/react'
+import { QueryAnswer} from '../index'
 
 // import * as T from './types'
 import { createBaseQuery } from '../../utils'
@@ -125,6 +126,23 @@ export const qafoundryKnowledgesApi = createApi({
       }),
       invalidatesTags: ['Knowledges', 'KnowledgeDetails'],
     }),
+    queryKnowledge: builder.mutation<
+      QueryAnswer,
+      KnowledgeQueryDto & { queryController: string }
+    >({
+      query: (payload) => {
+        const token = localStorage.getItem('idToken'); // Retrieve JWT from localStorage
+
+        return {
+          url: `/retrievers/graph-rag/answer`,
+          body: payload,
+          method: 'POST',
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined, // Conditional header
+          },
+        };
+      },
+    }),
     deleteKnowledge: builder.mutation({
       query: (payload: { knowledgeName: string }) => ({
         url: `/v1/knowledges/${payload.knowledgeName}`,
@@ -159,6 +177,7 @@ export const {
   useGetDataIngestionRunsQuery,
 
   // mutations
+  useQueryKnowledgeMutation,
   useCreateKnowledgeMutation,
   useAddDocsToKnowledgeMutation,
   useUnassociateDataSourceMutation,

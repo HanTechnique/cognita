@@ -79,33 +79,6 @@ class BaseQueryController:
             ),
         )
 
-    async def _get_knowledge_graphs(self, user: dict, collection_name: str):
-        """
-        Get the knowledge graphs for the collection
-        """
-        user_id = user['sub']  # Implement user authentication
-
-        client = await get_client()
-        client = CollectionPrismaStore(client)
-        collection = await client.aget_retrieve_collection_by_name_and_user(user, collection_name)
-        if collection is None:
-            raise HTTPException(status_code=404, detail="Collection not found")
-
-        if not isinstance(collection, Collection):
-            collection = Collection(**collection.model_dump())
-
-        # Authorization check:
-        if collection.owner_id != user_id:  # Assuming you have an owner_id field
-            raise HTTPException(status_code=403, detail="Forbidden")
-
-        knowledge_graphs = {}
-        for koc in collection.knowledges:
-            knowledge_graph = GRAPHRAG_STORE_CLIENT.get_graph_store(
-                knowledge_name=koc.knowledge.name,
-            )
-            knowledge_graphs[koc.knowledge.name] = knowledge_graph
-        return knowledge_graphs
-
     def _get_vector_store_retriever(self, vector_store, retriever_config):
         """
         Get the vector store retriever
@@ -228,25 +201,6 @@ class BaseQueryController:
             answer = response.json()["summary"][0]["data"]
             return answer
         return ""
-
-    def _knowledges_search(self, knowledge_graphs, query):
-        import asyncio
-        import nest_asyncio
-        import uvloop
-
-        asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
-        nest_asyncio.apply()
-
-        logger.info("Using knowledge search...")
-        documents = []
-        for knowledge_name, knowledge_graph in knowledge_graphs.items():
-            knowledge_response = knowledge_graph.query(query)
-            document = Document(
-                page_content=knowledge_response,
-                metadata={"_data_point_fqn": "knowledge::" + knowledge_name},
-            )
-            documents.append(document)
-        return documents
 
     def _internet_search(self, context):
         if settings.BRAVE_API_KEY:
